@@ -11,10 +11,22 @@ use App\Service\Messaging;
 
 class ContactController extends AbstractController
 {
-    #[Route('/api/contact', name: 'app_contact_api', methods: 'POST')]
+    #[Route('/api/contact', name: 'app_contact_api', methods: ['POST','OPTIONS'])]
     public function sendContactEmail(Request $request, SerializerInterface $serializerInterface, Messaging $messaging): Response {
         
         try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+        
             
             //?Récupérer le contenu de la requête en provenance du front
             $json = $request->getContent();
@@ -24,7 +36,7 @@ class ContactController extends AbstractController
                 return $this->json(
                     ['Error' => 'The json is empty or does not exist.'],
                     400,
-                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
                 );
             }
@@ -44,7 +56,7 @@ class ContactController extends AbstractController
                 return $this->json(
                     ['Error' => 'The email adress '.$data['email'].' is not a valid email adress.'],
                     422,
-                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
                 );
             }
@@ -75,7 +87,7 @@ class ContactController extends AbstractController
                 return $this->json(
                     ['Error' => 'Unable to send mail'],
                     500,
-                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
                 );
             }
@@ -84,7 +96,7 @@ class ContactController extends AbstractController
             return $this->json(
                 ['Success'=> 'The message has been sent '], 
                 200, 
-                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'],
                 []
             );
         
@@ -95,7 +107,7 @@ class ContactController extends AbstractController
             return $this->json(
                 ['Error' => $error->getMessage()],
                 400,
-                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
             );
         }
