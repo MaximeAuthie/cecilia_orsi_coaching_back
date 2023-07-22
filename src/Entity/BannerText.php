@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\BannerTextRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: BannerTextRepository::class)]
 class BannerText
@@ -11,9 +12,11 @@ class BannerText
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('page:getById')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups('page:getById')] 
     private ?string $content_banner_text = null;
 
     #[ORM\ManyToOne(inversedBy: 'BannerTextsList')]

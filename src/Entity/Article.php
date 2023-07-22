@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -14,27 +15,33 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('article:getAll')]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups('article:getAll')]
     private ?string $title_article = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups('article:getAll')]
     private ?\DateTimeInterface $date_article = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups('article:getAll')]
     private ?string $banner_url_article = null;
 
     #[ORM\Column(length: 255)]
     private ?string $description_article = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups('article:getAll')]
     private ?string $summary_article = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $content_article = null;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'articles_list')]
+    #[Groups('article:getAll')]
     private Collection $categories_list;
 
     #[ORM\OneToMany(mappedBy: 'article', targetEntity: Comment::class)]
@@ -45,6 +52,7 @@ class Article
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups('article:getAll')]
     private ?User $user = null;
 
     public function __construct()

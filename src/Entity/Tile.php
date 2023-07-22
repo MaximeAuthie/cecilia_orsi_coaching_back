@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\TileRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TileRepository::class)]
 class Tile
@@ -11,15 +12,19 @@ class Tile
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('page:getById')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups('page:getById')] 
     private ?string $title_tile = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups('page:getById')] 
     private ?string $img_url_tile = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups('page:getById')] 
     private ?string $link_tile = null;
 
     public function getId(): ?int

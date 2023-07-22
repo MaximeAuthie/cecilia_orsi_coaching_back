@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PageRepository::class)]
 class Page
@@ -14,36 +15,47 @@ class Page
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('page:getById')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups('page:getById')] 
     private ?string $title_page = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups('page:getById')] 
     private ?string $banner_url_page = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups('page:getById')] 
     private ?string $img1_url_page = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups('page:getById')] 
     private ?string $img2_url_page = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups('page:getById')] 
     private ?string $text1_page = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups('page:getById')] 
     private ?string $text2_page = null;
 
     #[ORM\Column]
+    #[Groups('page:getById')] 
     private ?bool $isMainButtonActive_page = null;
 
     #[ORM\Column]
+    #[Groups('page:getById')] 
     private ?bool $isSecondaryButtonActive_page = null;
 
     #[ORM\ManyToMany(targetEntity: Tile::class)]
+    #[Groups('page:getById')] 
     private Collection $tiles_list;
 
     #[ORM\OneToMany(mappedBy: 'page', targetEntity: BannerText::class)]
+    #[Groups('page:getById')] 
     private Collection $BannerTextsList;
 
     public function __construct()
