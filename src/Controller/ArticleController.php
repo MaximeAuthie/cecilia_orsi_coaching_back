@@ -10,7 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ArticleController extends AbstractController
 {
-    #[Route('/api/article/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
+    #[Route('/api/article/validated/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
     public function getAllArticles(Request $request , ArticleRepository $articleRepository): Response
     {
         try {
@@ -27,7 +27,7 @@ class ArticleController extends AbstractController
             }
 
             //? Rechercher les articles dans la base de données
-            $articles = $articleRepository->findAll();
+            $articles = $articleRepository->findBy(['isPublished_article' => 'true']);
 
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
