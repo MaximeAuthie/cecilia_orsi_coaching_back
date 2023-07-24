@@ -10,8 +10,8 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PageController extends AbstractController {
 
-    #[Route('/api/page/{id}', name: 'app_tiles_api', methods: ['GET','OPTIONS'])]
-    public function getPageDataById(int $id, Request $request , PageRepository $pageRepository): Response
+    #[Route('/api/page/all', name: 'app_tiles_api', methods: ['GET','OPTIONS'])]
+    public function getAllPages(Request $request , PageRepository $pageRepository): Response
     {
         try {
 
@@ -27,25 +27,25 @@ class PageController extends AbstractController {
             }
 
             //? Rechercher la page dans la BDD avec son id
-            $page = $pageRepository->find($id);
-            // dd($page);
-            //? Si la page demandée n'existe pas dans la BDD
-            if (!isset($page)) {
+            $pages = $pageRepository->findAll();
+            
+            //? Si aucune page n'est présente dans la BDD
+            if (!isset($pages)) {
                 return $this->json(
-                    ['erreur'=> 'La page N°'.$id.' n\'existe pas dans la BDD.'],
+                    ['erreur'=> 'Aucune page présente dans la BDD.'],
                     206, 
-                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], //renvoie du json, uniquement depuis local host, et uniquelent sous forme de GET
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
                 );
             }
 
-            //? Si la page existe dans la BDD
+            //? Si des catégories sont présentes dans la BDD
             return $this->json(
-                $page, 
+                $pages, 
                 200, 
-                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], //renvoie du json, uniquement depuis local host, et uniquelent sous forme de GET
-                ['groups' => 'page:getById']
-            );  
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'page:getAll']
+            );
         
         //? En cas d'erreur inattendue, capter l'erreur rencontrée
         } catch (\Exception $error) {
