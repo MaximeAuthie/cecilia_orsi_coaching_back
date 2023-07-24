@@ -26,9 +26,10 @@ class CategoryController extends AbstractController
                 ]);
             }
 
-            //? Rechercher les articles dans la base de données
+            //? Rechercher les catégories dans la base de données
             $categories = $categoryRepository->findAll();
-            //? Si aucun article n'est présent dans la BDD
+
+            //? Si aucune catégorie n'est présente dans la BDD
             if (!isset($categories)) {
                 return $this->json(
                     ['erreur'=> 'Aucune catégorie présente dans la BDD.'],
@@ -38,7 +39,7 @@ class CategoryController extends AbstractController
                 );
             }
 
-            //? Si des articles sont présents dans la BDD
+            //? Si des catégories sont présentes dans la BDD
             return $this->json(
                 $categories, 
                 200, 
