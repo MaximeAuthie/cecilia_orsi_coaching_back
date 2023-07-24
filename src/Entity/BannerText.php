@@ -12,11 +12,11 @@ class BannerText
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $content_banner_text = null;
 
     #[ORM\ManyToOne(inversedBy: 'BannerTextsList')]

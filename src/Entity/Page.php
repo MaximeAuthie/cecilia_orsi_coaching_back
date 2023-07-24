@@ -15,47 +15,47 @@ class Page
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $title_page = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $banner_url_page = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $img1_url_page = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $img2_url_page = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $text1_page = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $text2_page = null;
 
     #[ORM\Column]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?bool $isMainButtonActive_page = null;
 
     #[ORM\Column]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?bool $isSecondaryButtonActive_page = null;
 
     #[ORM\ManyToMany(targetEntity: Tile::class)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private Collection $tiles_list;
 
     #[ORM\OneToMany(mappedBy: 'page', targetEntity: BannerText::class)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private Collection $BannerTextsList;
 
     public function __construct()

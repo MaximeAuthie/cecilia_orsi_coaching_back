@@ -15,7 +15,7 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups('article:getAll')]
+    #[Groups(['article:getAll', 'comment:getAll'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
@@ -31,6 +31,7 @@ class Article
     private ?string $banner_url_article = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups('article:getAll')]
     private ?string $description_article = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -38,6 +39,7 @@ class Article
     private ?string $summary_article = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups('article:getAll')]
     private ?string $content_article = null;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'articles_list')]
@@ -54,6 +56,9 @@ class Article
     #[ORM\JoinColumn(nullable: false)]
     #[Groups('article:getAll')]
     private ?User $user = null;
+
+    #[ORM\Column]
+    private ?bool $isPublished_article = null;
 
     public function __construct()
     {
@@ -231,6 +236,18 @@ class Article
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function isIsPublished(): ?bool
+    {
+        return $this->isPublished_article;
+    }
+
+    public function setIsPublished(bool $isPublished_article): static
+    {
+        $this->isPublished_article = $isPublished_article;
 
         return $this;
     }

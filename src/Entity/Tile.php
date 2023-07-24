@@ -12,19 +12,19 @@ class Tile
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $title_tile = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $img_url_tile = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups('page:getById')] 
+    #[Groups('page:getAll')] 
     private ?string $link_tile = null;
 
     public function getId(): ?int

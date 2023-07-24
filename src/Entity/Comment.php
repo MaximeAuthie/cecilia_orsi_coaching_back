@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CommentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 class Comment
@@ -12,27 +13,36 @@ class Comment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['comment:getAll'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['comment:getAll'])]
     private ?string $author_name_comment = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['comment:getAll'])]
     private ?string $author_email_comment = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['comment:getAll'])]
     private ?\DateTimeInterface $date_comment = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['comment:getAll'])]
     private ?string $content_comment = null;
 
     #[ORM\ManyToOne(inversedBy: 'comments_list')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['comment:getAll'])]
     private ?Article $article = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
+
+    #[ORM\Column]
+    private ?bool $isValidated_comment = null;
 
     public function getId(): ?int
     {
@@ -107,6 +117,18 @@ class Comment
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function isIsValidatedComment(): ?bool
+    {
+        return $this->isValidated_comment;
+    }
+
+    public function setIsValidatedComment(bool $isValidated_comment): static
+    {
+        $this->isValidated_comment = $isValidated_comment;
 
         return $this;
     }
