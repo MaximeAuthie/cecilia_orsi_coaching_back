@@ -15,11 +15,11 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['article:getAll', 'comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getAll', 'comment:getToValidate'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups('article:getAll')]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?string $title_article = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

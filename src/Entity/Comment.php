@@ -13,28 +13,28 @@ class Comment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?string $author_name_comment = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?string $author_email_comment = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?\DateTimeInterface $date_comment = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?string $content_comment = null;
 
     #[ORM\ManyToOne(inversedBy: 'comments_list')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['comment:getAll'])]
+    #[Groups(['article:getAll', 'comment:getToValidate'])]
     private ?Article $article = null;
 
     #[ORM\ManyToOne]
