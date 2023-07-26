@@ -15,8 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class CommentController extends AbstractController {
-    #[Route('/api/comment/all', name: 'app_validated_comments_api', methods: ['GET','OPTIONS'])]
-    public function getAllComments(Request $request , CommentRepository $commentRepository): Response {
+    #[Route('/api/comment/validated', name: 'app_validated_comments_api', methods: ['GET','OPTIONS'])]
+    public function getValidatedComments(Request $request , CommentRepository $commentRepository): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -31,7 +31,7 @@ class CommentController extends AbstractController {
             }
 
             //? Rechercher les commentaires dans la base de données
-            $comments = $commentRepository->findBy(['isValidated_comment'=> 'true']);
+            $comments = $commentRepository->findBy(['isValidated_comment'=> true]);
 
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
@@ -192,6 +192,54 @@ class CommentController extends AbstractController {
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
                 []);
+        }
+    }
+
+    #[Route('/api/comment/toValidate', name: 'app_not_validated_comment_api', methods: ['GET','OPTIONS'])] 
+    public function getCommentsToValidate(Request $request , CommentRepository $commentRepository): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Rechercher les commentaires dans la base de données
+            $comments = $commentRepository->findBy(['isValidated_comment'=> false]);
+
+            //? Si aucun commentaire n'est présent dans la BDD
+            if (!isset($comments)) {
+                return $this->json(
+                    ['erreur'=> 'Aucun commentaire présent dans la BDD.'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si des commentraires sont présents dans la BDD
+            return $this->json(
+                $comments, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'comment:getToValidate']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['Error' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
         }
     }
 }
