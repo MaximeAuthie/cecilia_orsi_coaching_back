@@ -6,6 +6,7 @@ use App\Repository\CommentRepository;
 use App\Entity\Comment;
 use App\Service\Messaging;
 use App\Repository\ArticleRepository;
+use App\Repository\UserRepository;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,7 +17,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class CommentController extends AbstractController {
     #[Route('/api/comment/validated', name: 'app_validated_comments_api', methods: ['GET','OPTIONS'])]
-    public function getValidatedComments(Request $request , CommentRepository $commentRepository): Response {
+    public function getValidatedComments(Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -31,7 +32,11 @@ class CommentController extends AbstractController {
             }
 
             //? Rechercher les commentaires dans la base de données
-            $comments = $commentRepository->findBy(['isValidated_comment'=> true]);
+            
+            $comments = $commentRepository->createQueryBuilder('c')
+            ->where('c.user IS NOT NULL')
+            ->getQuery()
+            ->getResult();
 
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
@@ -48,7 +53,7 @@ class CommentController extends AbstractController {
                 $comments, 
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
-                ['groups' => 'comment:getAll']
+                ['groups' => 'comment:getValidated']
             ); 
 
         //? En cas d'erreur inattendue, capter l'erreur rencontrée
@@ -84,7 +89,7 @@ class CommentController extends AbstractController {
             //?On vérifie si le json n'est pas vide
             if (!$json) {
                 return $this->json(
-                    ['Erreur' => 'Le json est vide ou n\'esiste pas.'],
+                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
                     400,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
                     [] );
@@ -211,7 +216,7 @@ class CommentController extends AbstractController {
             }
 
             //? Rechercher les commentaires dans la base de données
-            $comments = $commentRepository->findBy(['isValidated_comment'=> false]);
+            $comments = $commentRepository->findBy(['user'=> null]);
 
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
@@ -240,6 +245,176 @@ class CommentController extends AbstractController {
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
             );
+        }
+    }
+
+    #[Route('/api/comment/validate', name: 'app_validate_comment_api', methods: ['PATCH','OPTIONS'])]
+    public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    [] );
+            }
+
+            //?On sérialise le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? On nettoie les donnée issues du json
+            $commentId     = Utils::cleanInput($data['commentId']);
+            $userId       = Utils::cleanInput($data['userId']);
+
+            //? Instancier un objet Comment
+            $comment = $commentRepository->find($commentId);
+            
+            //? Vérifier si le commentaire existe dans la BDD 
+            if (!$comment) {
+                return $this->json(
+                    ['erreur'=> 'Le commentaire N°'.$commentId.' n\'existe pas dans la BDD'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                    []);
+            }
+
+            //? Instancier un objet User
+            $user = $userRepository->find($userId);
+
+            //? Vérifier si le user existe dans la BDD 
+            if (!$user) {
+                return $this->json(
+                    ['erreur'=> 'L\'utilisateur N°'.$commentId.' n\'existe pas dans la BDD'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                    []);
+            }
+
+            //? Modifier la valeur de la propriété isValidated_comment et de user
+            $comment->setIsValidatedComment(true);
+            $comment->setUser($user);
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($comment);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['success'=> 'Le commentaire à bien été validé avec succès;'],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreur'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+        }
+    }
+
+    #[Route('/api/comment/reject', name: 'app_reject_comment_api', methods: ['PATCH','OPTIONS'])]
+    public function rejectComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    [] );
+            }
+
+            //?On sérialise le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? On nettoie les donnée issues du json
+            $commentId     = Utils::cleanInput($data['commentId']);
+            $userId       = Utils::cleanInput($data['userId']);
+
+            //? Instancier un objet Comment
+            $comment = $commentRepository->find($commentId);
+            
+            //? Vérifier si le commentaire existe dans la BDD 
+            if (!$comment) {
+                return $this->json(
+                    ['erreur'=> 'Le commentaire N°'.$commentId.' n\'existe pas dans la BDD'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                    []);
+            }
+
+            //? Instancier un objet User
+            $user = $userRepository->find($userId);
+
+            //? Vérifier si le user existe dans la BDD 
+            if (!$user) {
+                return $this->json(
+                    ['erreur'=> 'L\'utilisateur N°'.$commentId.' n\'existe pas dans la BDD'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                    []);
+            }
+
+            //? Modifier la valeur de la propriété isValidated_comment et de user
+            $comment->setIsValidatedComment(false);
+            $comment->setUser($user);
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($comment);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['success'=> 'Le commentaire à bien été rejeté avec succès.'],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreur'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
         }
     }
 }
