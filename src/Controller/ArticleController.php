@@ -15,7 +15,7 @@ class ArticleController extends AbstractController
     {
         try {
 
-            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
             if ($request->isMethod('OPTIONS')) {
                 
                 return new Response('', 204, [
@@ -28,7 +28,7 @@ class ArticleController extends AbstractController
 
             //? Rechercher les articles dans la base de données
             $articles = $articleRepository->findBy(['isPublished_article' => 'true']);
-
+            
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
                 return $this->json(
