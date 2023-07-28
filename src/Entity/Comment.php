@@ -13,35 +13,37 @@ class Comment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?string $author_name_comment = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?string $author_email_comment = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?\DateTimeInterface $date_comment = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?string $content_comment = null;
 
     #[ORM\ManyToOne(inversedBy: 'comments_list')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['article:getAll', 'comment:getToValidate'])]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?Article $article = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?User $user = null;
 
     #[ORM\Column]
+    #[Groups(['comment:getValidated', 'comment:getToValidate'])]
     private ?bool $isValidated_comment = null;
 
     public function getId(): ?int
