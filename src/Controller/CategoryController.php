@@ -23,7 +23,7 @@ class CategoryController extends AbstractController
                 
                 return new Response('', 204, [
                     'Access-Control-Allow-Origin' => '*',
-                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Methods' => 'GET, OPTIONS',
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
@@ -166,7 +166,7 @@ class CategoryController extends AbstractController
             //? Sérializer le json (on le change de format json -> tableau)
             $data = $serializerInterface->decode($json, 'json');
 
-            //? Nettoyer les donnée issues du json
+            //? Nettoyer les données issues du json
             $id               = Utils::cleanInput($data['id']);
             $categoryName     = Utils::cleanInput($data['name']);
             $categoryColor    = Utils::cleanInput($data['color']);
