@@ -54,7 +54,7 @@ class Page
     #[Groups('page:getAll')] 
     private Collection $tiles_list;
 
-    #[ORM\OneToMany(mappedBy: 'page', targetEntity: BannerText::class)]
+    #[ORM\OneToMany(mappedBy: 'page', targetEntity: BannerText::class, cascade: ["persist"])] //! cascade indipensable pour permettre l'ajout de nouveau BannerText en BDD dans l'updatde la page
     #[Groups('page:getAll')] 
     private Collection $BannerTextsList;
 
@@ -98,7 +98,7 @@ class Page
         return $this->img1_url_page;
     }
 
-    public function setImg1UrlPage(string $img1_url_page): static
+    public function setImg1UrlPage(string|null $img1_url_page): static
     {
         $this->img1_url_page = $img1_url_page;
 
@@ -110,7 +110,7 @@ class Page
         return $this->img2_url_page;
     }
 
-    public function setImg2UrlPage(string $img2_url_page): static
+    public function setImg2UrlPage(string|null $img2_url_page): static
     {
         $this->img2_url_page = $img2_url_page;
 
