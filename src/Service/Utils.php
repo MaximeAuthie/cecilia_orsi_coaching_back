@@ -6,7 +6,7 @@
          * @param string $value
          * @return null|string
          */
-        public static function cleanInput(string $value):?string{
+        public static function cleanInput(string|null $value):?string{
             return htmlspecialchars(strip_tags(trim($value)));
         }
 
