@@ -113,7 +113,7 @@ class ArticleController extends AbstractController
     }
 
     #[Route('/api/article/update', name: 'app_article_update_api', methods: ['PATCH','OPTIONS'])]
-    public function updatePage(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function updateArticle(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
