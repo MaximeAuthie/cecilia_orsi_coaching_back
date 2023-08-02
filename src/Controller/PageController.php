@@ -64,7 +64,7 @@ class PageController extends AbstractController {
         }
     }
 
-    #[Route('/api/page/update', name: 'app_categories_update_api', methods: ['PATCH','OPTIONS'])]
+    #[Route('/api/page/update', name: 'app_page_update_api', methods: ['PATCH','OPTIONS'])]
     public function updatePage(Request $request , PageRepository $pageRepository, BannerTextRepository $bannerTextRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
         try {
     
