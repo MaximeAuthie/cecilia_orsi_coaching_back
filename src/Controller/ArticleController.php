@@ -2,17 +2,22 @@
 
 namespace App\Controller;
 
+use App\Entity\Keyword;
 use App\Repository\ArticleRepository;
+use App\Repository\CategoryRepository;
+use App\Repository\KeywordRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Service\Utils;
 
 class ArticleController extends AbstractController
 {
-    #[Route('/api/article/validated/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
-    public function getAllArticles(Request $request , ArticleRepository $articleRepository): Response
-    {
+    #[Route('/api/article/validated/all', name: 'app_articles_published_api', methods: ['GET','OPTIONS'])]
+    public function getAllPublishedArticles(Request $request , ArticleRepository $articleRepository): Response {
         try {
 
             // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -56,6 +61,229 @@ class ArticleController extends AbstractController
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
             );
+        }
+    }
+
+    #[Route('/api/article/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
+    public function getAllArticles(Request $request , ArticleRepository $articleRepository): Response {
+        try {
+
+            // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Rechercher les articles dans la base de données
+            $articles = $articleRepository->findAll();
+            
+            //? Si aucun article n'est présent dans la BDD
+            if (!isset($articles)) {
+                return $this->json(
+                    ['erreur'=> 'Aucun article présent dans la BDD.'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si des articles sont présents dans la BDD
+            return $this->json(
+                $articles, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'article:getAll']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['Error' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
+    #[Route('/api/article/update', name: 'app_article_update_api', methods: ['PATCH','OPTIONS'])]
+    public function updatePage(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $id                         = Utils::cleanInput($data['id']);
+            $title                      = Utils::cleanInput($data['title_article']);
+            $date                       = new \DateTimeImmutable();
+            $bannerUrl                  = Utils::cleanInput($data['banner_url_article']);
+            $description                = Utils::cleanInput($data['description_article']);
+            $content                    = $data['content_article'];
+            $summary                    = Utils::cleanInput(substr($content,0, 400));
+            $newCategories              = $data['categories_list'];
+            $newKeywords                = $data['kewords_list'];
+
+            //? Vérifier si l'article existe
+            $article = $articleRepository->find($id);
+            
+            if (!$article) {
+                return $this->json(
+                    ['message' => 'La l\'article n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Stocker la liste des objets BannerText remontés de la BDD dans une variable
+            $databaseCategories = $article->getCategoriesList()->toArray();
+           
+            //? Vérifier s'il faut supprimer des BannerText de la BDD
+            $dbList = [];
+            $jsonList= [];
+
+            // Récupérer tous les id de BannerText en BDD
+            foreach ($databaseCategories as $item) {  
+                $dbList[] = $item->getId();
+            }
+            // Récupérer tous les id de BannerText dans le json
+            foreach($newCategories as $item) { 
+                $jsonList[] =  Utils::cleanInput($item['id']);
+            }
+
+            // Stocker les id présents dans $dbList qui ne sont pas dans $jsonList
+            $result = array_diff($dbList, $jsonList);
+
+            //Supprimer les bannerList en trop de la BDD
+            foreach($result as $item) { 
+                $categoryToDelete = $categoryRepository->find($item);
+                $article->removeCategoriesList($categoryToDelete);
+            }
+            
+            //? Vérifier si les catégories existent
+            if (isset($newCategories)) {
+                foreach ($newCategories as $item) {
+                    $categorie = $categoryRepository->find(Utils::cleanInput($item['id']));
+
+                    if (!$categorie) {
+                        return $this->json(
+                            ['erreur'=> 'La catégorie '.$item['name_category'].' n\'existe pas dans la BDD'],
+                            400, 
+                            ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'localhost', 'Access-Control-Allow-Method' => 'GET'], //renvoie du json, uniquement depuis local host, et uniquelent sous forme de GET
+                            []
+                        );
+                    } else {
+                        $article->addCategoriesList($categorie);
+                    }
+                }
+            }
+
+            //? Stocker la liste des objets BannerText remontés de la BDD dans une variable
+            $databaseKeywords = $article->getKewordsList()->toArray();
+           
+            //? Vérifier s'il faut supprimer des BannerText de la BDD
+            $dbList = [];
+            $jsonList= [];
+
+            // Récupérer tous les id de BannerText en BDD
+            foreach ($databaseKeywords as $item) {  
+                $dbList[] = $item->getId();
+            }
+            // Récupérer tous les id de BannerText dans le json
+            foreach($newKeywords as $item) { 
+                $jsonList[] =  $item['id'];
+            }
+
+            // Stocker les id présents dans $dbList qui ne sont pas dans $jsonList
+            $result = array_diff($dbList, $jsonList);
+
+            //Supprimer les bannerList en trop de la BDD
+            foreach($result as $item) { 
+                $keywordToDelete = $keywordRepository->find($item);
+                $entityManagerInterface->remove($keywordToDelete);
+                $entityManagerInterface->flush();
+            }
+
+            //? Vérifier si les BannerText du json existent existent déjà dans la BDD et les créer si besoin
+            if (isset($newKeywords)) {
+                foreach($newKeywords as $item) {
+                    $keywordToAdd = $keywordRepository->find($item['id']);
+                    if ($keywordToAdd) {
+                        if ($keywordToAdd->getContentKeywork() != $item['content_keywork']) {
+                            $keywordToAdd->setContentKeywork($item['content_keywork']);
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        $keywordToAdd = new Keyword();
+                        $keywordToAdd->setContentKeywork(Utils::cleanInput($item['content_keywork']));
+                        $keywordToAdd->setArticle($article);
+                    }
+
+                    $entityManagerInterface->persist($keywordToAdd);
+                    $entityManagerInterface->flush();
+                }
+            }
+            
+            //? Instancier un objet Article et setter ses propriétés
+            $article->setTitleArticle($title);
+            $article->setDateArticle($date);
+            $article->setBannerUrlArticle($bannerUrl);
+            $article->setDescriptionArticle($description);
+            $article->setSummaryArticle($summary);
+            $article->setContentArticle($content);
+ 
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($article);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['message'=> 'La page à bien été modifiée dans la BDD'],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
         }
     }
 }
