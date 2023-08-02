@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\KeywordRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: KeywordRepository::class)]
 class Keyword
@@ -11,12 +12,15 @@ class Keyword
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('article:getAll')]
     private ?int $id = null;
-
+    
+    
     #[ORM\Column(length: 50)]
+    #[Groups('article:getAll')]
     private ?string $content_keywork = null;
 
-    #[ORM\ManyToOne(inversedBy: 'kewords_list')]
+    #[ORM\ManyToOne(inversedBy: 'kewords_list', cascade: ["persist"])] //! cascade indipensable pour permettre l'ajout de nouveau BannerText en BDD dans l'updatde la page
     #[ORM\JoinColumn(nullable: false)]
     private ?Article $article = null;
 

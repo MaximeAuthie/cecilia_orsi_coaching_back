@@ -50,6 +50,7 @@ class Article
     private Collection $comments_list;
 
     #[ORM\OneToMany(mappedBy: 'article', targetEntity: Keyword::class)]
+    #[Groups('article:getAll')]
     private Collection $kewords_list;
 
     #[ORM\ManyToOne]
@@ -57,7 +58,8 @@ class Article
     #[Groups('article:getAll')]
     private ?User $user = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::BOOLEAN)]
+    #[Groups('article:getAll')]
     private ?bool $isPublished_article = null;
 
     public function __construct()
@@ -240,12 +242,12 @@ class Article
         return $this;
     }
 
-    public function isIsPublished(): ?bool
+    public function isIsPublishedArticle(): ?bool
     {
         return $this->isPublished_article;
     }
 
-    public function setIsPublished(bool $isPublished_article): static
+    public function setIsPublishedArticle(bool $isPublished_article): static
     {
         $this->isPublished_article = $isPublished_article;
 
