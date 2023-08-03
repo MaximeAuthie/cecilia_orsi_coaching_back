@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
+use App\Entity\Article;
 use App\Entity\Keyword;
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\KeywordRepository;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -270,7 +272,7 @@ class ArticleController extends AbstractController
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
-                ['message'=> 'La page à bien été modifiée dans la BDD'],
+                ['message'=> 'L\'article à bien été modifiée dans la BDD'],
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -284,6 +286,196 @@ class ArticleController extends AbstractController
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
+        }
+    }
+
+    #[Route('/api/article/publish', name: 'app_article_publish_api', methods: ['PATCH','OPTIONS'])]
+    public function publishArticle(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $id = Utils::cleanInput($data['id']);
+    
+
+            //? Vérifier si l'article existe
+            $article = $articleRepository->find($id);
+            
+            if (!$article) {
+                return $this->json(
+                    ['message' => 'La l\'article n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Instancier une variable $message qui sera implémenté en fonction du cas de figue et renvoyé via json
+            $message = '';
+
+            //? Setter la propriété isPublishedArticle en fonction du cas de figure
+            if ($article->isIsPublishedArticle()) {
+                $article->setIsPublishedArticle(false);
+                $message = "L'article n'est plus publié sur le site.";
+            } else {
+                $article->setIsPublishedArticle(true);
+                $message = "L'article est publié sur le site.";
+            }
+            
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($article);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['message'=> $message],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+        }
+    }
+
+    #[Route('/api/article/add', name: 'app_article_add_api', methods: ['POST','OPTIONS'])]
+    public function addArticle(Request $request , UserRepository $userRepository,  CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $title              = Utils::cleanInput($data['title_article']);
+            $bannerUrl          = Utils::cleanInput($data['banner_url_article']);
+            $date               = new \DateTimeImmutable();
+            $description        = Utils::cleanInput($data['description_article']);
+            $content            = Utils::cleanInput($data['content_article']);
+            $summary            = Utils::cleanInput(substr($content,0, 400));
+            $userId             = Utils::cleanInput($data['user_id']);
+            $keywordsList       = $data['kewords_list'];
+            $categoriesList     = $data['categories_list'];
+            
+            //? Vérifier si le user existe
+            $user = $userRepository->find($userId);
+
+            if (!$user) {
+                return $this->json(
+                    ['message' => 'La l\'utilisateur n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
+                    []
+                );
+            }
+
+            
+
+            //? Instancier un nouvel article et setter ses propriétés
+            $article = new Article();
+            $article->setTitleArticle($title);
+            $article->setBannerUrlArticle($bannerUrl);
+            $article->setDateArticle($date);
+            $article->setDescriptionArticle($description);
+            $article->setContentArticle($content);
+            $article->setSummaryArticle($summary);
+            $article->setIsPublishedArticle(false);
+            $article->setUser($user);
+
+            foreach ($categoriesList as $item) {
+                $categorie = $categoryRepository->find($item['id']);
+                $article->addCategoriesList($categorie);
+            }
+            
+
+            //? Persiter et flush des données pour les insérerb l'article en BDD
+            $entityManagerInterface->persist($article);
+            $entityManagerInterface->flush();
+
+            //? Ajouter les keywords à la BDD
+            if ($keywordsList) {
+                foreach($keywordsList as $item) { 
+                    $keywordToAdd = new Keyword();
+                    $keywordToAdd->setContentKeywork(Utils::cleanInput($item['content_keywork']));
+                    $keywordToAdd->setArticle($article);
+                    $entityManagerInterface->persist($keywordToAdd);
+                    $entityManagerInterface->flush();
+                }
+            }
+            
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                $article, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
+                ['groups' => 'article:getAll']
+            );
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
+                []
+            );
         }
     }
 }
