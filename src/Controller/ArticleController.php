@@ -34,7 +34,7 @@ class ArticleController extends AbstractController
             }
 
             //? Rechercher les articles dans la base de données
-            $articles = $articleRepository->findBy(['isPublished_article' => 'true']);
+            $articles = $articleRepository->findBy(['isPublished_article' => 'true', 'isActive_article' => 'true']);
             
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
@@ -82,7 +82,7 @@ class ArticleController extends AbstractController
             }
 
             //? Rechercher les articles dans la base de données
-            $articles = $articleRepository->findAll();
+            $articles = $articleRepository->findBy(['isActive_article' => 'true']);
             
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
@@ -150,7 +150,7 @@ class ArticleController extends AbstractController
             $date                       = new \DateTimeImmutable();
             $bannerUrl                  = Utils::cleanInput($data['banner_url_article']);
             $description                = Utils::cleanInput($data['description_article']);
-            $content                    = $data['content_article'];
+            $content                    = Utils::cleanInputArticleContent($data['content_article']);
             $summary                    = Utils::cleanInput(substr($content,0, 400));
             $newCategories              = $data['categories_list'];
             $newKeywords                = $data['kewords_list'];
@@ -406,7 +406,7 @@ class ArticleController extends AbstractController
             $bannerUrl          = Utils::cleanInput($data['banner_url_article']);
             $date               = new \DateTimeImmutable();
             $description        = Utils::cleanInput($data['description_article']);
-            $content            = Utils::cleanInput($data['content_article']);
+            $content            = Utils::cleanInputArticleContent($data['content_article']);
             $summary            = Utils::cleanInput(substr($content,0, 400));
             $userId             = Utils::cleanInput($data['user_id']);
             $keywordsList       = $data['kewords_list'];
@@ -435,6 +435,7 @@ class ArticleController extends AbstractController
             $article->setContentArticle($content);
             $article->setSummaryArticle($summary);
             $article->setIsPublishedArticle(false);
+            $article->setIsActiveArticle(true);
             $article->setUser($user);
 
             foreach ($categoriesList as $item) {
@@ -478,4 +479,80 @@ class ArticleController extends AbstractController
             );
         }
     }
+
+    #[Route('/api/article/disable', name: 'app_article_disable_api', methods: ['PATCH','OPTIONS'])]
+    public function disableArticle(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $id     = Utils::cleanInput($data['id']);
+            $title   = Utils::cleanInput($data['title']);
+
+            //? Vérifier si l'article existe
+            $article = $articleRepository->find($id);
+            
+            if (!$article) {
+                return $this->json(
+                    ['message' => 'La l\'article n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Instancier une variable $message qui sera implémenté en fonction du cas de figue et renvoyé via json
+            $message = '';
+
+            //? Setter la propriété isPublishedArticle en fonction du cas de figure
+            $article->setIsActiveArticle(false);
+            
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($article);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['message'=> 'L\'article '.$title.' a été désactivé.'],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+        }
+    }    
 }
