@@ -62,6 +62,9 @@ class Article
     #[Groups('article:getAll')]
     private ?bool $isPublished_article = null;
 
+    #[ORM\Column]
+    private ?bool $isActive_article = null;
+
     public function __construct()
     {
         $this->categories_list = new ArrayCollection();
@@ -250,6 +253,18 @@ class Article
     public function setIsPublishedArticle(bool $isPublished_article): static
     {
         $this->isPublished_article = $isPublished_article;
+
+        return $this;
+    }
+
+    public function isIsActiveArticle(): ?bool
+    {
+        return $this->isActive_article;
+    }
+
+    public function setIsActiveArticle(bool $isActive_article): static
+    {
+        $this->isActive_article = $isActive_article;
 
         return $this;
     }
