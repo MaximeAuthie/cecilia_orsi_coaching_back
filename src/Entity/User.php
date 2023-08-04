@@ -14,12 +14,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('user:getAll')]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups('user:getAll')]
     private ?string $email = null;
 
     #[ORM\Column]
+    #[Groups('user:getAll')]
     private array $roles = [];
 
     /**
@@ -29,11 +32,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups('article:getAll')]
+    #[Groups(['article:getAll','user:getAll'])]
     private ?string $first_name_user = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups('article:getAll')]
+    #[Groups(['article:getAll','user:getAll'])]
     private ?string $last_name_user = null;
 
     public function getId(): ?int
