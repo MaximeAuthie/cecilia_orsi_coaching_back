@@ -10,6 +10,14 @@
             return htmlspecialchars(strip_tags(trim($value)));
         }
 
+         /**
+         * @param string $value
+         * @return null|string
+         */
+        public static function cleanInputArticleContent(string|null $value):?string{
+            return strip_tags(trim($value), '<strong><em><ul><li><h1><h2><h3>');
+        }
+
         /**
          * @param string  $date
          * @param string  $format
