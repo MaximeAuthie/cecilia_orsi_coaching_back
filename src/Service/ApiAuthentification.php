@@ -31,17 +31,17 @@ namespace App\Service;
             }
         }
 
-        public function genNewToken(string $email, string $secretkey, UserRepository $userRepository) {
+        public function genNewToken(string $email, string $secretkey, UserRepository $userRepository, string $duration) {
 
             //? autolaod composer
             require_once('../vendor/autoload.php'); 
 
             //? Définir les variables pour le token
             $user       = $userRepository->findOneBy(['email'=>$email]);
-            $issuedAt   = new \DateTimeImmutable();                                     //Date de génération du token
-            $expire     = $issuedAt->modify('+60 minutes')->getTimestamp();             //Date d'expiration du token
-            $serverName = "your.domain.name";                                           //Domaine du site
-            $username   = $user->getFirstNameUser() + ' ' + $user->getLastNameUser();   //Récupérer le nom entier
+            $issuedAt   = new \DateTimeImmutable();                                         //Date de génération du token
+            $expire     = $issuedAt->modify('+'.$duration.' minutes')->getTimestamp();      //Date d'expiration du token
+            $serverName = "your.domain.name";                                               //Domaine du site
+            $username   = $user->getFirstNameUser().' '.$user->getLastNameUser();           //Récupérer le nom entier
             
             //? Définir le contenu du token
             $data = [
@@ -60,11 +60,12 @@ namespace App\Service;
         }
 
         public function verifyToken(string $token, string $key) {
-            //? autolaod composer
+
+            //? autoload composer
             require_once('../vendor/autoload.php'); //Obligatoire
 
             try {
-                //? Décoder le token (on vérifie s'il est valide et la méthode retourne une exception avec un message si quelque chose ne va pas dans  son contenu )
+                //? Décoder le token (on vérifie s'il est valide et la méthode retourne une exception avec un message si quelque chose ne va pas dans son contenu )
                 $decodeToken = JWT::decode($token, new Key($key, 'HS512'));
 
                 //? Retourner true si il a pu décoder le token (s'il n'y arrive pas, il renvoie une exception sans passer par cette étape)
