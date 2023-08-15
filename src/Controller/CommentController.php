@@ -8,6 +8,7 @@ use App\Service\Messaging;
 use App\Repository\ArticleRepository;
 use App\Repository\UserRepository;
 use App\Service\Utils;
+use App\Service\ApiAuthentification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -249,7 +250,7 @@ class CommentController extends AbstractController {
     }
 
     #[Route('/api/comment/validate', name: 'app_validate_comment_api', methods: ['PATCH','OPTIONS'])]
-    public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging): Response {
+    public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -261,6 +262,33 @@ class CommentController extends AbstractController {
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
@@ -300,7 +328,7 @@ class CommentController extends AbstractController {
             //? Vérifier si le user existe dans la BDD 
             if (!$user) {
                 return $this->json(
-                    ['erreur'=> 'L\'utilisateur N°'.$commentId.' n\'existe pas dans la BDD'],
+                    ['erreur'=> 'L\'utilisateur N°'.$userId.' n\'existe pas dans la BDD'],
                     400, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                     []);
@@ -334,7 +362,7 @@ class CommentController extends AbstractController {
     }
 
     #[Route('/api/comment/reject', name: 'app_reject_comment_api', methods: ['PATCH','OPTIONS'])]
-    public function rejectComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging): Response {
+    public function rejectComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging, apiAuthentification $apiAuthentification): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -346,6 +374,33 @@ class CommentController extends AbstractController {
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+            
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)

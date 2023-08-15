@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Service\Utils;
+use App\Service\ApiAuthentification;
 
 class PageController extends AbstractController {
 
@@ -65,9 +66,10 @@ class PageController extends AbstractController {
     }
 
     #[Route('/api/page/update', name: 'app_page_update_api', methods: ['PATCH','OPTIONS'])]
-    public function updatePage(Request $request , PageRepository $pageRepository, BannerTextRepository $bannerTextRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function updatePage(Request $request , PageRepository $pageRepository, BannerTextRepository $bannerTextRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
+                
         try {
-    
+
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
             if ($request->isMethod('OPTIONS')) {
                 return new Response('', 204, [
@@ -78,6 +80,33 @@ class PageController extends AbstractController {
                 ]);
             }
 
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+            
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+            
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
             $json = $request->getContent();
 
@@ -152,8 +181,6 @@ class PageController extends AbstractController {
                         $bannerText = new BannerText();
                         $bannerText->setContentBannerText(Utils::cleanInput($value['content_banner_text']));
                         $bannerText->setPage($page);
-                        
-                        // $page->addBannerTextsList($newBannertext);
                     }
 
                     $entityManagerInterface->persist($bannerText);
