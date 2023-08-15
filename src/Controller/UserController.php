@@ -181,7 +181,7 @@ class UserController extends AbstractController {
   
         //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
         $secretkey      = $this->getParameter('token');
-        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 1);
+        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 60);
 
         //? Rediriger l'utilisateur vers le front avec le token
         header("Location: http://localhost:3000/managerApp/logIn/".$token);
