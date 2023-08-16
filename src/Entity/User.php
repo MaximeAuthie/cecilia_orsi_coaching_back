@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -38,6 +39,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50)]
     #[Groups(['article:getAll','user:getAll'])]
     private ?string $last_name_user = null;
+
+    #[ORM\Column]
+    private ?bool $isActive_user = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $last_auth_user = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $last_update_user = null;
 
     public function getId(): ?int
     {
@@ -129,6 +139,42 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastNameUser(string $last_name_user): static
     {
         $this->last_name_user = $last_name_user;
+
+        return $this;
+    }
+
+    public function isIsActiveUser(): ?bool
+    {
+        return $this->isActive_user;
+    }
+
+    public function setIsActiveUser(bool $isActive_user): static
+    {
+        $this->isActive_user = $isActive_user;
+
+        return $this;
+    }
+
+    public function getLastAuthUser(): ?\DateTimeInterface
+    {
+        return $this->last_auth_user;
+    }
+
+    public function setLastAuthUser(\DateTimeInterface $last_auth_user): static
+    {
+        $this->last_auth_user = $last_auth_user;
+
+        return $this;
+    }
+
+    public function getLastUpdateUser(): ?\DateTimeInterface
+    {
+        return $this->last_update_user;
+    }
+
+    public function setLastUpdateUser(?\DateTimeInterface $last_update_user): static
+    {
+        $this->last_update_user = $last_update_user;
 
         return $this;
     }
