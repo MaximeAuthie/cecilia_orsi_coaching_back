@@ -19,7 +19,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class UserController extends AbstractController {
     //! API pour vérifier la demande d'authentification et envoyer un mail de double authentification
     #[ROUTE('api/user/logIn', name:"app_api_user_login", methods: ['PATCH','OPTIONS'])]
-    public function logInUser(ApiAuthentification $apiAuthentification, UserPasswordHasherInterface $userPasswordHasherInterface,  Request $request, SerializerInterface $serializerInterface, UserRepository $userRepository, Messaging $messaging ):Response {
+    public function logInUser(ApiAuthentification $apiAuthentification, UserPasswordHasherInterface $userPasswordHasherInterface,  Request $request, SerializerInterface $serializerInterface, UserRepository $userRepository, Messaging $messaging, EntityManagerInterface $entityManagerInterface ):Response {
         
         try {
 
@@ -50,8 +50,9 @@ class UserController extends AbstractController {
             $data = $serializerInterface->decode($json,'json');
 
             //? Nettoyer les données du json et les stocker dans des variables
-            $email      = Utils::cleanInput($data['email']);
-            $password   = Utils::cleanInput($data['password']);
+            $email          = Utils::cleanInput($data['email']);
+            $password       = Utils::cleanInput($data['password']);
+            $currentTime    = new \DateTimeImmutable();
 
             //? Récupérer la clé de chiffrement
             $secretkey = $this->getParameter('token');
@@ -110,7 +111,12 @@ class UserController extends AbstractController {
                         []
                     );
                 }
-                
+
+                //? Mettre à jour l'heure de dernière authentification de l'utilisateur dans la BDD
+                $user->setLastAuthUser($currentTime);
+                $entityManagerInterface->persist($user);
+                $entityManagerInterface->flush();
+
                 //? Retourner un json pour avertir que la première étape de la connexion a réussie
                 return $this->json(
                     ['message'=> 'Un email de double indentification vient d\'être envoyé à '.$user->getEmail()],
@@ -184,8 +190,104 @@ class UserController extends AbstractController {
         $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 60);
 
         //? Rediriger l'utilisateur vers le front avec le token
-        header("Location: http://localhost:3000/managerApp/logIn/".$token);
+        header("Location: http://localhost:3000/managerApp/logIn/".$token."!".$id);
         die();
+    }
+
+    //! API pour récupérer le rôle d'un utilisateur
+    #[Route('/api/user/role', name: 'app_user_role_api', methods: ['PATCH','OPTIONS'])]
+    public function getUserRole(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+ 
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //?On vérifie si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $id = Utils::cleanInput($data['id']);
+
+            //? Vérifier si l'utilisateur existe
+            $user = $userRepository->find($id);
+            
+            if (!$user) {
+                return $this->json(
+                    ['message' => 'L\'utilisateur n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+        
+            //? Récupérer le rôle de l'utilsateur
+            $role = $user->getRoles();
+            $role = $role[count($role)-1];
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                $role,
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message'=>'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+        }
     }
 }
  
