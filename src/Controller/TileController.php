@@ -9,6 +9,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Service\Utils;
+use App\Service\ApiAuthentification;
 use Doctrine\ORM\EntityManagerInterface;
 
 class TileController extends AbstractController {
@@ -61,7 +62,7 @@ class TileController extends AbstractController {
     }
 
     #[Route('/api/tile/update', name: 'app_tile_update_api', methods: ['PATCH','OPTIONS'])]
-    public function updateTile(Request $request , TileRepository $tileRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function updateTile(Request $request , TileRepository $tileRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -73,6 +74,33 @@ class TileController extends AbstractController {
                     'Access-Control-Max-Age' => '86400', 
                 ]);
             }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+ 
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            } 
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
             $json = $request->getContent();

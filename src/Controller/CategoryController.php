@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Category;
 use App\Repository\CategoryRepository;
 use App\Service\Utils;
+use App\Service\ApiAuthentification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -63,7 +64,7 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/add', name: 'app_categories_add_api', methods: ['POST','OPTIONS'])]
-    public function addCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function addCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -74,6 +75,33 @@ class CategoryController extends AbstractController
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
@@ -137,7 +165,7 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/update', name: 'app_categories_update_api', methods: ['PATCH','OPTIONS'])]
-    public function updateCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function updateCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -148,6 +176,33 @@ class CategoryController extends AbstractController
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
@@ -211,7 +266,7 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/delete', name: 'app_categories_delete_api', methods: ['DELETE','OPTIONS'])]
-    public function deleteCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+    public function deleteCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -223,6 +278,33 @@ class CategoryController extends AbstractController
                     'Access-Control-Max-Age' => '86400', 
                 ]);
             }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+ 
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    400, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            } 
 
             //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
             $json = $request->getContent();
