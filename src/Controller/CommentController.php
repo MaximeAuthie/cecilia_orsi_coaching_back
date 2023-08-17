@@ -273,7 +273,7 @@ class CommentController extends AbstractController {
             if ($jwt == '') {
                 return $this->json(
                     ['message' => 'Le token n\'existe pas.'],
-                    400, 
+                    401, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     []
                 );
@@ -385,7 +385,7 @@ class CommentController extends AbstractController {
             if ($jwt == '') {
                 return $this->json(
                     ['message' => 'Le token n\'existe pas.'],
-                    400, 
+                    401, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     []
                 );
