@@ -28,10 +28,14 @@
             return $dt && $dt->format($format) === $date;
         }
 
+         /**
+         * @param string  $date
+         * @param string  $format
+         * @return bool
+        */
         public static function isValidDatetime($date, $format = 'Y-m-d H:i:s'):bool{
             $dt = \DateTime::createFromFormat($format, $date);
             return $dt && $dt->format($format) === $date;
         }
-
     }
 ?>
