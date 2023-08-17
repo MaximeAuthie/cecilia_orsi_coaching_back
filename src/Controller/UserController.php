@@ -218,7 +218,7 @@ class UserController extends AbstractController {
             if ($jwt == '') {
                 return $this->json(
                     ['message' => 'Le token n\'existe pas.'],
-                    400, 
+                    401, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     []
                 );
@@ -287,6 +287,152 @@ class UserController extends AbstractController {
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
+        }
+    }
+
+    //! Route permettant de vérifier la validité d'uun token et d'en fournir un nouveau si ce dernier est expiré (sous certaines conditions)
+    #[Route('/api/user/jwt/check', name: 'app_user_jwt_api', methods: ['PATCH','OPTIONS'])]
+    public function checkTokenValidity(Request $request , UserRepository $userRepository, ApiAuthentification $apiAuthentification, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+ 
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    401, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+            
+            if ($verifyToken !== true && $verifyToken !== "Expired token") {
+                return $this->json(
+                    ['message' => "expired-session"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+            
+            if ($verifyToken === "Expired token") {
+                //?Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+                $json = $request->getContent();
+                
+                //?On vérifie si le json n'est pas vide
+                if (!$json) {
+                    return $this->json(
+                        ['message' => 'Le json est vide ou n\'existe pas.'],
+                        400,
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                        []
+                    );
+                }
+                
+                //? Sérializer le json (on le change de format json -> tableau)
+                $data = $serializerInterface->decode($json, 'json');
+
+                //? Nettoyer les données issues du json et les stocker dans des variables
+                $id = Utils::cleanInput($data['id']);
+
+                //? Vérifier si l'utilisateur existe
+                $user = $userRepository->findOneBy(['id' => $id, 'isActive_user' => 'true']);
+               
+                //? Si l'utilisateur n'existe pas ou n'est pas actif
+                if (!isset($user)) {
+                    return $this->json(
+                        ['message'=> 'expired-session'],
+                        206, 
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                        []
+                    );
+                }
+
+                //? Vérifier si la dernière demande de connexion a moins d'une heure
+                $lastAuthTime = $user->getLastAuthUser();
+                $lastUpdateTime = $user->getLastUpdateUser();
+                $currentTime = new \DateTimeImmutable();
+                $expirationTime = clone $lastAuthTime;
+                $expirationTime->modify('+60 minutes');
+
+                if ($lastAuthTime > $currentTime) {
+                    return $this->json(
+                        ['message'=> 'expired-session'],
+                        206, 
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                        []
+                    );
+                }
+
+                if ($currentTime > $expirationTime ) {
+                    return $this->json(
+                        ['message'=> 'expired-session'],
+                        206, 
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                        []
+                    );
+                }
+
+                //? Verifier si la date de dernière authentification n'est pas antérieure à la date de dernière modification
+                if ($lastUpdateTime > $lastAuthTime ) {
+                    return $this->json(
+                        ['message'=> 'expired-session'],
+                        206, 
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                        []
+                    );
+                }
+                
+                //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
+                $secretkey      = $this->getParameter('token');
+                $newToken       = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 5);
+                
+                //? Mettre à jour la date de dernière authentification dans la BDD
+                $user->setLastAuthUser($currentTime);
+                $entityManagerInterface->persist($user);
+                $entityManagerInterface->flush();
+                
+                //? Renvoyer un nouveau token
+                return $this->json(
+                    $newToken, 
+                    200, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH']
+                ); 
+            }
+
+            return $this->json(
+                $jwt, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'PATCH'], 
+                []
+            );
         }
     }
 }
