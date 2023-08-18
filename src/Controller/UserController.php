@@ -9,7 +9,6 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
-use App\Entity\User;
 use App\Service\Utils;
 use App\Service\Messaging;
 use App\Service\ApiAuthentification;
@@ -97,7 +96,7 @@ class UserController extends AbstractController {
                 $mailContent    = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
                                                       "<p>Bonjour ".$user->getFirstNameUser()." ! </p>".
                                                       "<p>Tu as essayé de te connecter à l'espace administrateur de Cécilia Orsi Coaching à ".$hour.". Pour confirmer ton identité et accéder à ton espace administrateur, cliques sur le lien suivant : </br>".
-                                                      '<a href = "https://127.0.0.1:8000/api/user/logIn/'.$user->getId().'/'.$token.'">Lien d\'activation</a>', 'ISO-8859-1', 'UTF-8');
+                                                      '<a href = "https://127.0.0.1:8000/api/user/logIn/'.$user->getId().'/'.$token.'">Accéder à l\'espace administrateur</a>', 'ISO-8859-1', 'UTF-8');
                 
                 //? Executer la méthode sendMail() de la classe Messenging
                 $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $user->getEmail(), $mailObject, $mailContent, $user->getFirstNameUser(), $user->getLastNameUser());
@@ -187,7 +186,7 @@ class UserController extends AbstractController {
   
         //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
         $secretkey      = $this->getParameter('token');
-        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 60);
+        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 1);
 
         //? Rediriger l'utilisateur vers le front avec le token
         header("Location: http://localhost:3000/managerApp/logIn/".$token."!".$id);
@@ -271,9 +270,18 @@ class UserController extends AbstractController {
             $role = $user->getRoles();
             $role = $role[count($role)-1];
 
+            //? Récupérer son prénom
+            $firstName = $user->getFirstNameUser();
+
+            //? Créer un tableau à retourner dans le json
+            $objectToReturn = [
+                "role"        => $role,
+                "firstName"   => $firstName
+            ];
+
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
-                $role,
+                $objectToReturn,
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -351,32 +359,32 @@ class UserController extends AbstractController {
                 $data = $serializerInterface->decode($json, 'json');
 
                 //? Nettoyer les données issues du json et les stocker dans des variables
-                $id = Utils::cleanInput($data['id']);
-
+                $id = Utils::cleanInput($data['idApplicant']);
+                
                 //? Vérifier si l'utilisateur existe
                 $user = $userRepository->findOneBy(['id' => $id, 'isActive_user' => 'true']);
-               
+             
                 //? Si l'utilisateur n'existe pas ou n'est pas actif
                 if (!isset($user)) {
                     return $this->json(
                         ['message'=> 'expired-session'],
-                        206, 
+                        498, 
                         ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                         []
                     );
                 }
-
+              
                 //? Vérifier si la dernière demande de connexion a moins d'une heure
                 $lastAuthTime = $user->getLastAuthUser();
                 $lastUpdateTime = $user->getLastUpdateUser();
                 $currentTime = new \DateTimeImmutable();
                 $expirationTime = clone $lastAuthTime;
                 $expirationTime->modify('+60 minutes');
-
+                
                 if ($lastAuthTime > $currentTime) {
                     return $this->json(
                         ['message'=> 'expired-session'],
-                        206, 
+                        498, 
                         ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                         []
                     );
@@ -390,12 +398,12 @@ class UserController extends AbstractController {
                         []
                     );
                 }
-
+      
                 //? Verifier si la date de dernière authentification n'est pas antérieure à la date de dernière modification
                 if ($lastUpdateTime > $lastAuthTime ) {
                     return $this->json(
                         ['message'=> 'expired-session'],
-                        206, 
+                        498, 
                         ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                         []
                     );
