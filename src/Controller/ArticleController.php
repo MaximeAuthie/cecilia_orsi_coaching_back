@@ -68,7 +68,7 @@ class ArticleController extends AbstractController
     }
 
     #[Route('/api/article/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
-    public function getAllArticles(Request $request , ArticleRepository $articleRepository): Response {
+    public function getAllArticles(Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
         try {
 
             // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -80,6 +80,33 @@ class ArticleController extends AbstractController
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    401, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //? Rechercher les articles dans la base de données
@@ -182,7 +209,7 @@ class ArticleController extends AbstractController
             $summary                    = Utils::cleanInput(substr($content,0, 400));
             $newCategories              = $data['categories_list'];
             $newKeywords                = $data['kewords_list'];
-
+           
             //? Vérifier si l'article existe
             $article = $articleRepository->find($id);
             

@@ -202,7 +202,7 @@ class CommentController extends AbstractController {
     }
 
     #[Route('/api/comment/toValidate', name: 'app_not_validated_comment_api', methods: ['GET','OPTIONS'])] 
-    public function getCommentsToValidate(Request $request , CommentRepository $commentRepository): Response {
+    public function getCommentsToValidate(Request $request , CommentRepository $commentRepository, ApiAuthentification $apiAuthentification): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -214,6 +214,33 @@ class CommentController extends AbstractController {
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    401, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
             }
 
             //? Rechercher les commentaires dans la base de données
@@ -453,6 +480,36 @@ class CommentController extends AbstractController {
             //? Persiter et flush des données pour les insérer en BDD
             $entityManagerInterface->persist($comment);
             $entityManagerInterface->flush();
+            
+            //? Récupérer les variables d'authentification du webmail pour utiliser la méthode sendEmail() du service Messaging    
+            $mailLogin      = $this->getParameter('mailaccount');
+            $mailPassword   = $this->getParameter('mailpassword');
+
+            //? Définition des variables pour utiliser la méthode sendEmail() de la classe Messenging
+            $dateTimeComment    =$comment->getDateComment();
+            $hour               = $dateTimeComment->format('H:i:s');
+            $date               = $dateTimeComment->format('d-m-Y');
+            $recipientName      = mb_convert_encoding($comment->getAuthorNameComment(), 'ISO-8859-1', 'UTF-8');
+            $mailObject         = mb_convert_encoding('Cécilia Orsi Coaching : équipe de modération', 'ISO-8859-1', 'UTF-8');
+            $mailContent        = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
+                                                  "<p>Bonjour ".$comment->getAuthorNameComment()." ! </p>".
+                                                  "<p>Nous t'informons que le commentaire que tu as laissé sur le site Cécilia Orsi Coaching le ".$date." à ".$hour." n'a pas été validé par notre équipe de modération car il ne respecte pas les règles éditées dans les mentions légales.</br>".
+                                                  "Ton commentaire n'apparaitra donc pas sur le site. <br><br>".
+                                                  "Merci de ta compréhension. <br><br>".
+                                                  "Cécilia Orsi Coaching", 'ISO-8859-1', 'UTF-8');
+            
+            //? Executer la méthode sendMail() de la classe Messenging
+            $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $comment->getAuthorEmailComment(), $mailObject, $mailContent, $recipientName, '');
+            dd($mailStatus);
+            //? Vérifier si l'envoi du mail à échoué
+            if ($mailStatus != 'The email has been sent') {
+                return $this->json(
+                    ['message' => 'Impossible d\'envoyer le mail de confirmation. Merci de réessayer plus tard.'],
+                    500,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
