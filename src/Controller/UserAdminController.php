@@ -240,7 +240,7 @@ class UserAdminController extends AbstractController
             $user->setLastUpdateUser($currentTime);
 
             //? Si un nouveau mot de passe existe dans le json, setter le password
-            if(isset($password)) {
+            if($password != "") {
                 $user->setPassword($userPasswordHasherInterface->hashPassword($user, $password));
             }
 
