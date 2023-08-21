@@ -82,6 +82,16 @@ class UserController extends AbstractController {
                 //? Récupérer les données de l'utilisateur dans une instance $user
                 $user = $userRepository->findOneBy(['email'=>$email]);
 
+                //? Vérifier si l'utilisateur est actif
+                if (!$user->isIsActiveUser()) {
+                    return $this->json(
+                        ['message' => 'L\'accès à votre compte a été suspendu par un administrateur.'],
+                        400,
+                        ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                        []
+                    );
+                }
+
                 //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
                 $secretkey      = $this->getParameter('token');
                 $token          = $apiAuthentification->genNewToken($email, $secretkey, $userRepository, 5);
@@ -443,5 +453,224 @@ class UserController extends AbstractController {
             );
         }
     }
+
+    //! Route permettant à l'utilisateur de récupérer les informations de son compte
+    #[Route('/api/user/account', name: 'app_users_account_api', methods: ['PATCH','OPTIONS'])]
+    public function getUserAccount(Request $request , UserRepository $userRepository, ApiAuthentification $apiAuthentification,SerializerInterface $serializerInterface): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+ 
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    401, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //? Vérifier si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $idApplicant = Utils::cleanInput($data['idApplicant']);
+
+            //? Rechercher les utilisateurs dans la base de données
+            $user = $userRepository->find($idApplicant);
+
+            //? Vérifier si l'utilisateur existe
+            if (!isset($user)) {
+                return $this->json(
+                    ['message'=> 'L\'utilisateur n\'existe pas aps la base de données'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si l'utilisateur existe
+            return $this->json(
+                $user, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'user:getAll']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
+    //! Route permettant à l'utilisateur de mettre à jour les informations de son compte
+    #[Route('/api/user/account/update', name: 'app_user_account_upadate_api', methods: ['PATCH','OPTIONS'])]
+    public function updateUserAccount(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
+        try {
+    
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'PATCH, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Récupérer les données nécessaires à la vérification du token
+            $key = $this->getParameter('token');
+            $jwt = $request->server->get('HTTP_AUTHORIZATION');
+            $jwt = str_replace('Bearer ', '', $jwt);
+
+            //? Vérifier si le token existe bien dans la requête
+            if ($jwt == '') {
+                return $this->json(
+                    ['message' => 'Le token n\'existe pas.'],
+                    401, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+ 
+            //? Executer la méthode verifyToken() du service ApiAthentification
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
+
+            if ($verifyToken !== true) {
+                return $this->json(
+                    ['message' => "Token invalide"],
+                    498, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Récupérer le contenu de la requête en provenance du front (tout ce qui se trouve dans le body de la requête)
+            $json = $request->getContent();
+
+            //? Vérifier si le json n'est pas vide
+            if (!$json) {
+                return $this->json(
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
+                    400,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Sérializer le json (on le change de format json -> tableau)
+            $data = $serializerInterface->decode($json, 'json');
+
+            //? Nettoyer les données issues du json et les stocker dans des variables
+            $id                         = Utils::cleanInput($data['id']);
+            $firstName                  = Utils::cleanInput($data['firstName']);
+            $lastName                   = Utils::cleanInput($data['lastName']);
+            $email                      = Utils::cleanInput($data['email']);     
+            $password                   = Utils::cleanInput($data['password']);
+            $currentTime                = new \DateTimeImmutable();
+                
+            //? Vérifier si l'utilisateur existe
+            $user = $userRepository->find($id);
+            
+            if (!$user) {
+                return $this->json(
+                    ['message' => 'L\'utilisateur n\'existe pas dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+
+            //? Vérifier si le format de l'adresse mail est valide
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            
+                return $this->json(
+                    ['message' => 'Le format de l\'adresse email n\'est pas valide.'],
+                    422,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                    []
+                );
+            }
+        
+            //? Instancier un objet User et setter ses propriétés
+            $user->setFirstNameUser($firstName);
+            $user->setLastNameUser($lastName);
+            $user->setEmail($email);
+            $user->setLastUpdateUser($currentTime);
+
+            //? Si un nouveau mot de passe existe dans le json, setter le password
+            if($password != "") {
+                $user->setPassword($userPasswordHasherInterface->hashPassword($user, $password));
+            }
+
+            //? Persiter et flush des données pour les insérer en BDD
+            $entityManagerInterface->persist($user);
+            $entityManagerInterface->flush();
+
+            //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
+            return $this->json(
+                ['message'=> 'Les informations de votre compte ont bien été mises à jour'],
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée        
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message'=>'Etat du json : '.$error->getMessage()],
+                400, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
+                []);
+        }
+    }
+
 }
  
