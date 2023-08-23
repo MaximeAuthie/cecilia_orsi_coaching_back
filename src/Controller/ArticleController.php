@@ -206,7 +206,7 @@ class ArticleController extends AbstractController
             $bannerUrl                  = Utils::cleanInput($data['banner_url_article']);
             $description                = Utils::cleanInput($data['description_article']);
             $content                    = Utils::cleanInputArticleContent($data['content_article']);
-            $summary                    = Utils::cleanInput(substr($content,0, 400));
+            $summary                    = substr($content,0, 380).'...';
             $newCategories              = $data['categories_list'];
             $newKeywords                = $data['kewords_list'];
            
@@ -516,7 +516,7 @@ class ArticleController extends AbstractController
             $date               = new \DateTimeImmutable();
             $description        = Utils::cleanInput($data['description_article']);
             $content            = Utils::cleanInputArticleContent($data['content_article']);
-            $summary            = Utils::cleanInput(substr($content,0, 400));
+            $summary            = substr($content,0, 380).'...';
             $userId             = Utils::cleanInput($data['user_id']);
             $keywordsList       = $data['kewords_list'];
             $categoriesList     = $data['categories_list'];
