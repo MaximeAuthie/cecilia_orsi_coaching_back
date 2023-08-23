@@ -391,6 +391,7 @@ class UserController extends AbstractController {
                 $expirationTime = clone $lastAuthTime;
                 $expirationTime->modify('+60 minutes');
                 
+                
                 if ($lastAuthTime > $currentTime) {
                     return $this->json(
                         ['message'=> 'expired-session'],
@@ -399,7 +400,7 @@ class UserController extends AbstractController {
                         []
                     );
                 }
-
+                //? Vérifier si l'heure de renouvellement (deniere authentification + 60 min) n'est pas dépassée
                 if ($currentTime > $expirationTime ) {
                     return $this->json(
                         ['message'=> 'expired-session'],

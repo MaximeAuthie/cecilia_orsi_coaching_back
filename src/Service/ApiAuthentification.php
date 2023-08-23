@@ -67,7 +67,7 @@ namespace App\Service;
             try {
                 //? Décoder le token (on vérifie s'il est valide et la méthode retourne une exception avec un message si quelque chose ne va pas dans son contenu )
                 $decodeToken = JWT::decode($token, new Key($key, 'HS512'));
-
+                
                 //? Retourner true si il a pu décoder le token (s'il n'y arrive pas, il renvoie une exception sans passer par cette étape)
                 return true;
 
