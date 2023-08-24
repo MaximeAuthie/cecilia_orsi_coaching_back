@@ -355,7 +355,7 @@ class CategoryController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'DELETE'],
                 []

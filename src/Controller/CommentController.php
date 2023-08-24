@@ -42,7 +42,7 @@ class CommentController extends AbstractController {
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
                 return $this->json(
-                    ['erreur'=> 'Aucun commentaire présent dans la BDD.'],
+                    ['message'=> 'Aucun commentaire présent dans la BDD.'],
                     206, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
@@ -61,7 +61,7 @@ class CommentController extends AbstractController {
         } catch (\Exception $error) {
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
@@ -90,7 +90,7 @@ class CommentController extends AbstractController {
             //?On vérifie si le json n'est pas vide
             if (!$json) {
                 return $this->json(
-                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
                     400,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
                     [] );
@@ -119,7 +119,7 @@ class CommentController extends AbstractController {
             if (!filter_var($authorEmail, FILTER_VALIDATE_EMAIL)) {
 
                 return $this->json(
-                    ['Error' => 'L\adresse email '.$authorEmail.' n\'est pas valide.'],
+                    ['message' => 'L\adresse email '.$authorEmail.' n\'est pas valide.'],
                     422,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
                     []
@@ -140,7 +140,7 @@ class CommentController extends AbstractController {
             //? Vérifier si l'article existe dans la BDD 
             if (!$article) {
                 return $this->json(
-                    ['erreur'=> 'L\'article N°'.$articleId.' n\'existe pas dans la BDD'],
+                    ['message'=> 'L\'article N°'.$articleId.' n\'existe pas dans la BDD'],
                     400, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
                     []);
@@ -175,7 +175,7 @@ class CommentController extends AbstractController {
             //?Vérfier si l'envoie de l'email à échoué
             if ($mailStatus != 'The email has been sent') {
                 return $this->json(
-                    ['Error' => 'Impossible d\'envoyer la notification par e-mail'],
+                    ['message' => 'Impossible d\'envoyer la notification par e-mail'],
                     500,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST'], 
                     []
@@ -184,7 +184,7 @@ class CommentController extends AbstractController {
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
-                ['erreur'=> 'Le commentaire à bien été ajouté à la BDD'],
+                ['message'=> 'Le commentaire à bien été ajouté à la BDD'],
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
                 []);
@@ -194,7 +194,7 @@ class CommentController extends AbstractController {
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreur'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
                 []);
@@ -249,7 +249,7 @@ class CommentController extends AbstractController {
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
                 return $this->json(
-                    ['erreur'=> 'Aucun commentaire présent dans la BDD.'],
+                    ['message'=> 'Aucun commentaire présent dans la BDD.'],
                     206, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
@@ -268,7 +268,7 @@ class CommentController extends AbstractController {
         } catch (\Exception $error) {
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
@@ -324,7 +324,7 @@ class CommentController extends AbstractController {
             //?On vérifie si le json n'est pas vide
             if (!$json) {
                 return $this->json(
-                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
                     400,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     [] );
@@ -355,7 +355,7 @@ class CommentController extends AbstractController {
             //? Vérifier si le user existe dans la BDD 
             if (!$user) {
                 return $this->json(
-                    ['erreur'=> 'L\'utilisateur N°'.$userId.' n\'existe pas dans la BDD'],
+                    ['message'=> 'L\'utilisateur N°'.$userId.' n\'existe pas dans la BDD'],
                     400, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                     []);
@@ -371,7 +371,7 @@ class CommentController extends AbstractController {
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
-                ['success'=> 'Le commentaire à bien été validé avec succès;'],
+                ['message'=> 'Le commentaire à bien été validé avec succès;'],
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -381,7 +381,7 @@ class CommentController extends AbstractController {
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreur'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -436,7 +436,7 @@ class CommentController extends AbstractController {
             //?On vérifie si le json n'est pas vide
             if (!$json) {
                 return $this->json(
-                    ['Erreur' => 'Le json est vide ou n\'existe pas.'],
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
                     400,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     [] );
@@ -455,7 +455,7 @@ class CommentController extends AbstractController {
             //? Vérifier si le commentaire existe dans la BDD 
             if (!$comment) {
                 return $this->json(
-                    ['erreur'=> 'Le commentaire N°'.$commentId.' n\'existe pas dans la BDD'],
+                    ['message'=> 'Le commentaire N°'.$commentId.' n\'existe pas dans la BDD'],
                     400, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                     []);
@@ -467,7 +467,7 @@ class CommentController extends AbstractController {
             //? Vérifier si le user existe dans la BDD 
             if (!$user) {
                 return $this->json(
-                    ['erreur'=> 'L\'utilisateur N°'.$commentId.' n\'existe pas dans la BDD'],
+                    ['message'=> 'L\'utilisateur N°'.$commentId.' n\'existe pas dans la BDD'],
                     400, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                     []);
@@ -500,7 +500,7 @@ class CommentController extends AbstractController {
             
             //? Executer la méthode sendMail() de la classe Messenging
             $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $comment->getAuthorEmailComment(), $mailObject, $mailContent, $recipientName, '');
-            dd($mailStatus);
+
             //? Vérifier si l'envoi du mail à échoué
             if ($mailStatus != 'The email has been sent') {
                 return $this->json(
@@ -513,7 +513,7 @@ class CommentController extends AbstractController {
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
-                ['success'=> 'Le commentaire à bien été rejeté avec succès.'],
+                ['message'=> 'Le commentaire à bien été rejeté avec succès.'],
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -523,7 +523,7 @@ class CommentController extends AbstractController {
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreur'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);

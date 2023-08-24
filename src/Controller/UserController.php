@@ -169,7 +169,7 @@ class UserController extends AbstractController {
  
         if (!$user) {
             return $this->json(
-                ['Error' => 'This user does not exist in the database.'],
+                ['message' => 'This user does not exist in the database.'],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
                 []

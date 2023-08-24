@@ -37,7 +37,7 @@ class PageController extends AbstractController {
             //? Si aucune page n'est présente dans la BDD
             if (!isset($pages)) {
                 return $this->json(
-                    ['erreur'=> 'Aucune page présente dans la BDD.'],
+                    ['message'=> 'Aucune page présente dans la BDD.'],
                     206, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
@@ -57,7 +57,7 @@ class PageController extends AbstractController {
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
@@ -153,7 +153,7 @@ class PageController extends AbstractController {
                 $dbList[] = $item->getId();
             }
             // Récupérer tous les id de BannerText dans le json
-            foreach($data['BannerTextsList'] as $item) { 
+            foreach($newBannerText as $item) { 
                 $jsonList[] =  $item['id'];
             }
 
@@ -210,7 +210,7 @@ class PageController extends AbstractController {
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);

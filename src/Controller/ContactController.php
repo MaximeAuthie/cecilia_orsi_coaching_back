@@ -34,7 +34,7 @@ class ContactController extends AbstractController
             //?Vérifier que le json n'est pas vide
             if (!$json) {
                 return $this->json(
-                    ['Error' => 'The json is empty or does not exist.'],
+                    ['message' => 'Le json est vide ou n\'existe pas.'],
                     400,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
@@ -54,7 +54,7 @@ class ContactController extends AbstractController
             //?Vérifier si le format de l'adresse email est valide
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return $this->json(
-                    ['Error' => 'The email adress '.$data['email'].' is not a valid email adress.'],
+                    ['message' => 'The email adress '.$data['email'].' is not a valid email adress.'],
                     422,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
@@ -85,7 +85,7 @@ class ContactController extends AbstractController
             //?Vérfier si l'envoie de l'email à échoué
             if ($mailStatus != 'The email has been sent') {
                 return $this->json(
-                    ['Error' => 'Unable to send mail'],
+                    ['message' => 'Unable to send mail'],
                     500,
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                     []
@@ -94,7 +94,7 @@ class ContactController extends AbstractController
             
             //? Retourner un json pour avertir que l'envoi du mail a fonctionné
             return $this->json(
-                ['Success'=> 'The message has been sent '], 
+                ['message'=> 'Le message a été envoyé avec succès'], 
                 200, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'],
                 []
@@ -105,7 +105,7 @@ class ContactController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []

@@ -40,7 +40,7 @@ class ArticleController extends AbstractController
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
                 return $this->json(
-                    ['erreur'=> 'Aucun article présent dans la BDD.'],
+                    ['message'=> 'Aucun article présent dans la BDD.'],
                     206, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
@@ -59,7 +59,7 @@ class ArticleController extends AbstractController
         } catch (\Exception $error) {
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
@@ -115,7 +115,7 @@ class ArticleController extends AbstractController
             //? Si aucun article n'est présent dans la BDD
             if (!isset($articles)) {
                 return $this->json(
-                    ['erreur'=> 'Aucun article présent dans la BDD.'],
+                    ['message'=> 'Aucun article présent dans la BDD.'],
                     206, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
                     []
@@ -134,7 +134,7 @@ class ArticleController extends AbstractController
         } catch (\Exception $error) {
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['Error' => $error->getMessage()],
+                ['message' => $error->getMessage()],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
                 []
@@ -337,7 +337,7 @@ class ArticleController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -446,7 +446,7 @@ class ArticleController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
@@ -581,7 +581,7 @@ class ArticleController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'],
                 []
@@ -685,7 +685,7 @@ class ArticleController extends AbstractController
 
             //? Retourner un json poour détailler l'erreur inattendue
             return $this->json(
-                ['erreumessager'=> 'Etat du json : '.$error->getMessage()],
+                ['message'=> 'Etat du json : '.$error->getMessage()],
                 400, 
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'],
                 []);
