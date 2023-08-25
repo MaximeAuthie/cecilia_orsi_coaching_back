@@ -28,6 +28,10 @@ class Tile
     #[Groups(['page:getAll', 'tile:getAll'])] 
     private ?string $link_tile = null;
 
+    #[Groups(['page:getAll', 'tile:getAll'])]
+    #[ORM\Column(nullable: true)]
+    private ?bool $isFullWidth_tile = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -65,6 +69,18 @@ class Tile
     public function setLinkTile(string $link_tile): static
     {
         $this->link_tile = $link_tile;
+
+        return $this;
+    }
+
+    public function isIsFullWidthTile(): ?bool
+    {
+        return $this->isFullWidth_tile;
+    }
+
+    public function setIsFullWidthTile(?bool $isFullWidth_tile): static
+    {
+        $this->isFullWidth_tile = $isFullWidth_tile;
 
         return $this;
     }
