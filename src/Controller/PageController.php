@@ -65,6 +65,55 @@ class PageController extends AbstractController {
         }
     }
 
+    #[Route('/api/page/{title}', name: 'app_page_title_api', methods: ['GET','OPTIONS'])]
+    public function getPageByTitle(string $title, Request $request , PageRepository $pageRepository): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Rechercher la page dans la BDD avec son id
+            $page = $pageRepository->findOneBy(['title_page'=>$title]);
+            
+            //? Vérifier si la page est présente dans la BDD
+            if (!isset($page)) {
+                return $this->json(
+                    ['message'=> 'La page n\'est pas présente dans la BDD.'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si la page est présente dans la BDD
+            return $this->json(
+                $page, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'page:getAll']
+            );
+        
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
     #[Route('/api/page/update', name: 'app_page_update_api', methods: ['PATCH','OPTIONS'])]
     public function updatePage(Request $request , PageRepository $pageRepository, BannerTextRepository $bannerTextRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
                 
