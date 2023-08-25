@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\TileRepository;
+use App\Repository\PageRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -41,6 +42,73 @@ class TileController extends AbstractController {
                 );
             }
 
+            //? Si des catégories sont présentes dans la BDD
+            return $this->json(
+                $tiles, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'tile:getAll']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
+    #[Route('/api/tile/{pageTitle}', name: 'app_tiles_page_api', methods: ['GET','OPTIONS'])]
+    public function getTilesByPage(string $pageTitle, Request $request, PageRepository $pageRepository, TileRepository $tileRepository): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Rechercher la page dans la base de données
+            $page = $pageRepository->findOneBy(['title_page'=>$pageTitle]);
+
+            //? Si aucune catégorie n'est présente dans la BDD
+            if (!isset($page)) {
+                return $this->json(
+                    ['message'=> 'La page demandée n\'existe pas'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Rechercher les tiles correspondantes à la page dans la BDD
+            $tiles = $page->getTilesList();
+            //? Si aucune tuile n'est présente dans la BDD pour cette page
+            if (!isset($tiles)) {
+                return $this->json(
+                    ['message'=> 'Aucune tuiles dans la BDD pour la page demandée'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si le nombre de tuiles est impair, setter isFullWith à true pour la dernière tuile
+            $tilesNumber = count($tiles);
+            if($tilesNumber%2 != 0) {
+                $tiles[$tilesNumber-1]->setIsFullWidthTile(true);
+              
+            }
+            
             //? Si des catégories sont présentes dans la BDD
             return $this->json(
                 $tiles, 
