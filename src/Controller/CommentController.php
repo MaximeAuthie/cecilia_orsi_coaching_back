@@ -35,7 +35,60 @@ class CommentController extends AbstractController {
             //? Rechercher les commentaires dans la base de données
             
             $comments = $commentRepository->createQueryBuilder('c')
-            ->where('c.user IS NOT NULL')
+            ->where('c.user IS NOT NULL AND c.isValidated_comment=1')
+            ->getQuery()
+            ->getResult();
+
+            //? Si aucun commentaire n'est présent dans la BDD
+            if (!isset($comments)) {
+                return $this->json(
+                    ['message'=> 'Aucun commentaire présent dans la BDD.'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Si des commentraires sont présents dans la BDD
+            return $this->json(
+                $comments, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'comment:getValidated']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
+    #[Route('/api/comment/validated/{id}', name: 'app_validated_comments_id_api', methods: ['GET','OPTIONS'])]
+    public function getValidatedCommentsById(int $id, Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
+        try {
+
+            //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+            //? Rechercher les commentaires dans la base de données
+            
+            $comments = $commentRepository->createQueryBuilder('c')
+            ->where('c.user IS NOT NULL AND c.isValidated_comment=1 AND c.article=:id')
+            ->setParameter('id', $id)
             ->getQuery()
             ->getResult();
 
