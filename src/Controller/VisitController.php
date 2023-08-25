@@ -110,7 +110,7 @@ class VisitController extends AbstractController {
         }
     }
 
-    #[Route('/api/visit/stats', name: 'app_validated_add_comment_api', methods: ['GET','OPTIONS'])] 
+    #[Route('/api/visit/stats', name: 'app_stats_visit_api', methods: ['GET','OPTIONS'])] 
     public function getVisitStats(Request $request , VisitRepository $visitRepository, ApiAuthentification $apiAuthentification): Response {
         try {
 
