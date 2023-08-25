@@ -142,6 +142,66 @@ class ArticleController extends AbstractController
         }
     }
 
+    #[Route('/api/article/{id}', name: 'app_articles_one_api', methods: ['GET','OPTIONS'])]
+    public function getArticleById(int $id, Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
+        try {
+
+            // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
+            if ($request->isMethod('OPTIONS')) {
+                
+                return new Response('', 204, [
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
+                    'Access-Control-Max-Age' => '86400', 
+                ]);
+            }
+
+          
+            //? Rechercher l'articles dans la base de données
+            $article = $articleRepository->find($id);
+           
+            //? Vérifier si l'article n'est pas présent dans la BDD
+            if (!isset($article)) {
+                return $this->json(
+                    ['message'=> 'L\'article n\'est pas présent dans la BDD'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+            //? Vérifier si l'article est publié
+            if (!$article->isIsActiveArticle()) {
+                return $this->json(
+                    ['message'=> 'L\'article n\'est pas publié'],
+                    206, 
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'],
+                    []
+                );
+            }
+
+
+            //? Si l'article est présent dans la BDD
+            return $this->json(
+                $article, 
+                200, 
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
+                ['groups' => 'article:getAll']
+            ); 
+
+        //? En cas d'erreur inattendue, capter l'erreur rencontrée
+        } catch (\Exception $error) {
+            //? Retourner un json poour détailler l'erreur inattendue
+            return $this->json(
+                ['message' => $error->getMessage()],
+                400,
+                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS'], 
+                []
+            );
+        }
+    }
+
     #[Route('/api/article/update', name: 'app_article_update_api', methods: ['PATCH','OPTIONS'])]
     public function updateArticle(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
