@@ -142,7 +142,7 @@ class ArticleController extends AbstractController
         }
     }
 
-    #[Route('/api/article/{id}', name: 'app_articles_one_api', methods: ['GET','OPTIONS'])]
+    #[Route('/api/article/id/{id}', name: 'app_articles_one_api', methods: ['GET','OPTIONS'])]
     public function getArticleById(int $id, Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
         try {
 

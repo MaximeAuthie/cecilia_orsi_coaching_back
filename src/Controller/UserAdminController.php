@@ -135,7 +135,7 @@ class UserAdminController extends AbstractController
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, access-control-allow-origin',
                     'Access-Control-Max-Age' => '86400', 
                 ]);
-            }
+            } 
 
             //? Récupérer les données nécessaires à la vérification du token
             $key = $this->getParameter('token');
@@ -269,6 +269,7 @@ class UserAdminController extends AbstractController
 
     #[Route('/api/user/add', name: 'app_user_add_api', methods: ['POST','OPTIONS'])]
     public function addUser(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
+        
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés

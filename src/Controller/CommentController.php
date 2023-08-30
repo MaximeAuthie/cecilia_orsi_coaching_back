@@ -17,8 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class CommentController extends AbstractController {
-    #[Route('/api/comment/validated', name: 'app_validated_comments_api', methods: ['GET','OPTIONS'])]
-    public function getValidatedComments(Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
+    #[Route('/api/comment/moderated', name: 'app_moderated_comments_api', methods: ['GET','OPTIONS'])]
+    public function getModeratedComments(Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -35,7 +35,7 @@ class CommentController extends AbstractController {
             //? Rechercher les commentaires dans la base de données
             
             $comments = $commentRepository->createQueryBuilder('c')
-            ->where('c.user IS NOT NULL AND c.isValidated_comment=1')
+            ->where('c.user IS NOT NULL')
             ->getQuery()
             ->getResult();
 

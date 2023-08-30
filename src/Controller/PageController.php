@@ -65,7 +65,7 @@ class PageController extends AbstractController {
         }
     }
 
-    #[Route('/api/page/{title}', name: 'app_page_title_api', methods: ['GET','OPTIONS'])]
+    #[Route('/api/page/title/{title}', name: 'app_page_title_api', methods: ['GET','OPTIONS'])]
     public function getPageByTitle(string $title, Request $request , PageRepository $pageRepository): Response {
         try {
 
