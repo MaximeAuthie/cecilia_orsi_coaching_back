@@ -16,6 +16,7 @@ use App\Service\ApiAuthentification;
 
 class PageController extends AbstractController {
 
+    //! Récupérer les données de toutes les pages de la BDD
     #[Route('/api/page/all', name: 'app_page_api', methods: ['GET','OPTIONS'])]
     public function getAllPages(Request $request , PageRepository $pageRepository): Response {
         try {
@@ -65,6 +66,7 @@ class PageController extends AbstractController {
         }
     }
 
+    //! Récupérer les données d'un page grace à son titre
     #[Route('/api/page/title/{title}', name: 'app_page_title_api', methods: ['GET','OPTIONS'])]
     public function getPageByTitle(string $title, Request $request , PageRepository $pageRepository): Response {
         try {
@@ -114,6 +116,7 @@ class PageController extends AbstractController {
         }
     }
 
+    //! Mettre à jour une page dans la BDD
     #[Route('/api/page/update', name: 'app_page_update_api', methods: ['PATCH','OPTIONS'])]
     public function updatePage(Request $request , PageRepository $pageRepository, BannerTextRepository $bannerTextRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
                 

@@ -12,11 +12,11 @@ use App\Service\Utils;
 use App\Service\ApiAuthentification;
 use Symfony\Component\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Firebase\JWT\ExpiredException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserAdminController extends AbstractController
 {
+    //! Récupérer les données de tous les utilisateurs actifs de la BDD
     #[Route('/api/user/active/all', name: 'app_users_all_api', methods: ['PATCH','OPTIONS'])]
     public function getAllActiveUsers(Request $request , UserRepository $userRepository, ApiAuthentification $apiAuthentification,SerializerInterface $serializerInterface): Response {
         try {
@@ -123,6 +123,7 @@ class UserAdminController extends AbstractController
         }
     }
 
+    //! Mettre à jour un utilisateur dans la BDD
     #[Route('/api/user/update', name: 'app_user_update_api', methods: ['PATCH','OPTIONS'])]
     public function updateUser(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -267,6 +268,7 @@ class UserAdminController extends AbstractController
         }
     }
 
+    //! Ajouter un utilisateur dans la BDD
     #[Route('/api/user/add', name: 'app_user_add_api', methods: ['POST','OPTIONS'])]
     public function addUser(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
         
@@ -409,6 +411,7 @@ class UserAdminController extends AbstractController
         }
     }
 
+    //! Désactiver un utilisateur dans la BDD
     #[Route('/api/user/disable', name: 'app_article_user_api', methods: ['PATCH','OPTIONS'])]
     public function disableUser(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {

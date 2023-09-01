@@ -10,7 +10,8 @@ use App\Service\Utils;
 use App\Service\Messaging;
 
 class ContactController extends AbstractController
-{
+{   
+    //! Envoyer un mail de contact
     #[Route('/api/contact', name: 'app_contact_api', methods: ['POST','OPTIONS'])]
     public function sendContactEmail(Request $request, SerializerInterface $serializerInterface, Messaging $messaging): Response {
         

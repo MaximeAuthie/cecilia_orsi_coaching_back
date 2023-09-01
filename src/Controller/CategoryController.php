@@ -14,7 +14,9 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class CategoryController extends AbstractController
-{
+{   
+
+    //! Récupérer les données de toutes les catégories de la BDD
     #[Route('/api/category/all', name: 'app_categories_api', methods: ['GET','OPTIONS'])]
     public function getAllCategories(Request $request , CategoryRepository $categoryRepository): Response {
         try {
@@ -63,6 +65,7 @@ class CategoryController extends AbstractController
         }
     }
 
+    //! Ajouter une catégorie dans la BDD
     #[Route('/api/category/add', name: 'app_categories_add_api', methods: ['POST','OPTIONS'])]
     public function addCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -164,6 +167,7 @@ class CategoryController extends AbstractController
         }
     }
 
+    //! Mettre à jour une catégorie dans la BDD
     #[Route('/api/category/update', name: 'app_categories_update_api', methods: ['PATCH','OPTIONS'])]
     public function updateCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -265,6 +269,7 @@ class CategoryController extends AbstractController
         }
     }
 
+    //! Supprimer une catégorie dans la BDD
     #[Route('/api/category/delete', name: 'app_categories_delete_api', methods: ['DELETE','OPTIONS'])]
     public function deleteCategory(Request $request , CategoryRepository $categoryRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {

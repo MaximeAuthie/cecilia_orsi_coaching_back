@@ -16,7 +16,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 
 class UserController extends AbstractController {
-    //! API pour vérifier la demande d'authentification et envoyer un mail de double authentification
+    //! Demander l'authentification et envoyer un mail de double authentification
     #[ROUTE('api/user/logIn', name:"app_api_user_login", methods: ['PATCH','OPTIONS'])]
     public function logInUser(ApiAuthentification $apiAuthentification, UserPasswordHasherInterface $userPasswordHasherInterface,  Request $request, SerializerInterface $serializerInterface, UserRepository $userRepository, Messaging $messaging, EntityManagerInterface $entityManagerInterface ):Response {
         
@@ -156,7 +156,7 @@ class UserController extends AbstractController {
         }
     }
     
-    //! API pour vérifier la double authentification et finaliser l'authentification
+    //! Vérifier la double authentification et finaliser l'authentification
     #[ROUTE('api/user/logIn/{id}/{token}', name:"app_api_user_login_validation", methods: 'GET')]
     public function logInValidation(string $id, string $token, Request $request, SerializerInterface $serializerInterface, UserRepository $userRepository, ApiAuthentification $apiAuthentification):Response {
          
@@ -203,7 +203,7 @@ class UserController extends AbstractController {
         die();
     }
 
-    //! API pour récupérer le rôle d'un utilisateur
+    //! Récupérer le rôle d'un utilisateur
     #[Route('/api/user/role', name: 'app_user_role_api', methods: ['PATCH','OPTIONS'])]
     public function getUserRole(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -308,7 +308,7 @@ class UserController extends AbstractController {
         }
     }
 
-    //! Route permettant de vérifier la validité d'uun token et d'en fournir un nouveau si ce dernier est expiré (sous certaines conditions)
+    //! Vérifier la validité d'un token et d'en fournir un nouveau si ce dernier est expiré (sous certaines conditions)
     #[Route('/api/user/jwt/check', name: 'app_user_jwt_api', methods: ['PATCH','OPTIONS'])]
     public function checkTokenValidity(Request $request , UserRepository $userRepository, ApiAuthentification $apiAuthentification, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
         try {
@@ -455,7 +455,7 @@ class UserController extends AbstractController {
         }
     }
 
-    //! Route permettant à l'utilisateur de récupérer les informations de son compte
+    //! Récupérer les informations de son compte
     #[Route('/api/user/account', name: 'app_users_account_api', methods: ['PATCH','OPTIONS'])]
     public function getUserAccount(Request $request , UserRepository $userRepository, ApiAuthentification $apiAuthentification,SerializerInterface $serializerInterface): Response {
         try {
@@ -550,7 +550,7 @@ class UserController extends AbstractController {
         }
     }
 
-    //! Route permettant à l'utilisateur de mettre à jour les informations de son compte
+    //! Mettre à jour les informations de son compte
     #[Route('/api/user/account/update', name: 'app_user_account_upadate_api', methods: ['PATCH','OPTIONS'])]
     public function updateUserAccount(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
         try {

@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class CommentController extends AbstractController {
+
+    //! Récupérer les données des commentaires déjà modérés
     #[Route('/api/comment/moderated', name: 'app_moderated_comments_api', methods: ['GET','OPTIONS'])]
     public function getModeratedComments(Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
         try {
@@ -69,6 +71,7 @@ class CommentController extends AbstractController {
         }
     }
 
+    //! Récupérer les données des commentaires déjà modérés et validés d'un article via son ID
     #[Route('/api/comment/validated/{id}', name: 'app_validated_comments_id_api', methods: ['GET','OPTIONS'])]
     public function getValidatedCommentsById(int $id, Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
         try {
@@ -122,6 +125,7 @@ class CommentController extends AbstractController {
         }
     }
 
+    //! Ajouter un comentaire dans la BDD
     #[Route('/api/comment/add', name: 'app_validated_add_comment_api', methods: ['POST','OPTIONS'])] 
     public function addComment(Request $request , ArticleRepository $articleRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging): Response {
         try {
@@ -254,6 +258,7 @@ class CommentController extends AbstractController {
         }
     }
 
+    //! Récupérer les données des commentaires à modérer
     #[Route('/api/comment/toValidate', name: 'app_not_validated_comment_api', methods: ['GET','OPTIONS'])] 
     public function getCommentsToValidate(Request $request , CommentRepository $commentRepository, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -329,6 +334,7 @@ class CommentController extends AbstractController {
         }
     }
 
+    //! Valider un article
     #[Route('/api/comment/validate', name: 'app_validate_comment_api', methods: ['PATCH','OPTIONS'])]
     public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -441,6 +447,7 @@ class CommentController extends AbstractController {
         }
     }
 
+    //! Rejeter un article
     #[Route('/api/comment/reject', name: 'app_reject_comment_api', methods: ['PATCH','OPTIONS'])]
     public function rejectComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging, apiAuthentification $apiAuthentification): Response {
         try {

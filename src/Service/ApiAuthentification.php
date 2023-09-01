@@ -40,7 +40,7 @@ namespace App\Service;
             $user       = $userRepository->findOneBy(['email'=>$email]);
             $issuedAt   = new \DateTimeImmutable();                                         //Date de génération du token
             $expire     = $issuedAt->modify('+'.$duration.' minutes')->getTimestamp();      //Date d'expiration du token
-            $serverName = "your.domain.name";                                               //Domaine du site
+            $serverName = "https://www.maximeauthie.fr/";                                   //Domaine du site
             $username   = $user->getFirstNameUser().' '.$user->getLastNameUser();           //Récupérer le nom entier
             
             //? Définir le contenu du token

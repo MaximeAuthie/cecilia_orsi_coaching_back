@@ -14,6 +14,8 @@ use App\Service\Utils;
 use App\Service\ApiAuthentification;
 
 class VisitController extends AbstractController {
+
+    //! Ajouter une visite dans la BDD
     #[Route('/api/visit/add', name: 'app_add_visit_api', methods: ['POST','OPTIONS'])] 
     public function addVisit(Request $request ,VisitRepository $visitRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface): Response {
         try {
@@ -110,6 +112,7 @@ class VisitController extends AbstractController {
         }
     }
 
+    //! Récupérer toutes les visites de le BDD et retourner des statistiques
     #[Route('/api/visit/stats', name: 'app_stats_visit_api', methods: ['GET','OPTIONS'])] 
     public function getVisitStats(Request $request , VisitRepository $visitRepository, ApiAuthentification $apiAuthentification): Response {
         try {

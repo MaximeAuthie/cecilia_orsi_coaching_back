@@ -19,6 +19,8 @@ use App\Service\ApiAuthentification;
 
 class ArticleController extends AbstractController
 {
+
+    //! Récupérer les données des articles publiés et actifs 
     #[Route('/api/article/validated/all', name: 'app_articles_published_api', methods: ['GET','OPTIONS'])]
     public function getAllPublishedArticles(Request $request , ArticleRepository $articleRepository): Response {
         try {
@@ -67,6 +69,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Récupérer les données des articles actifs (publiés ou non)
     #[Route('/api/article/all', name: 'app_articles_api', methods: ['GET','OPTIONS'])]
     public function getAllArticles(Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -142,6 +145,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Récupérer les données d'un article grace à son id
     #[Route('/api/article/id/{id}', name: 'app_articles_one_api', methods: ['GET','OPTIONS'])]
     public function getArticleById(int $id, Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -202,6 +206,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Mettre à jour les données d'un article
     #[Route('/api/article/update', name: 'app_article_update_api', methods: ['PATCH','OPTIONS'])]
     public function updateArticle(Request $request , ArticleRepository $articleRepository, KeywordRepository $keywordRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -404,6 +409,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Publier un article
     #[Route('/api/article/publish', name: 'app_article_publish_api', methods: ['PATCH','OPTIONS'])]
     public function publishArticle(Request $request , ArticleRepository $articleRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -513,6 +519,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Ajouter un article dans la BDD
     #[Route('/api/article/add', name: 'app_article_add_api', methods: ['POST','OPTIONS'])]
     public function addArticle(Request $request , UserRepository $userRepository,  CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
@@ -649,6 +656,7 @@ class ArticleController extends AbstractController
         }
     }
 
+    //! Désactiver un article dans la BDD
     #[Route('/api/article/disable', name: 'app_article_disable_api', methods: ['PATCH','OPTIONS'])]
     public function disableArticle(Request $request , ArticleRepository $articleRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {

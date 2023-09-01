@@ -14,6 +14,8 @@ use App\Service\ApiAuthentification;
 use Doctrine\ORM\EntityManagerInterface;
 
 class TileController extends AbstractController {
+
+    //! Récupérer les données de toutes les tuiles de la BDD
     #[Route('/api/tile/all', name: 'app_tiles_api', methods: ['GET','OPTIONS'])]
     public function getAllTiles(Request $request , TileRepository $tilesRepository): Response {
         try {
@@ -62,6 +64,7 @@ class TileController extends AbstractController {
         }
     }
 
+    //! Récupérer les données des tuiles d'une page grace à son titre
     #[Route('/api/tile/page/{pageTitle}', name: 'app_tiles_page_api', methods: ['GET','OPTIONS'])]
     public function getTilesByPage(string $pageTitle, Request $request, PageRepository $pageRepository): Response {
         try {
@@ -129,6 +132,7 @@ class TileController extends AbstractController {
         }
     }
 
+    //! Mettre à jour une tuile dans la BDD
     #[Route('/api/tile/update', name: 'app_tile_update_api', methods: ['PATCH','OPTIONS'])]
     public function updateTile(Request $request , TileRepository $tileRepository, SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         
