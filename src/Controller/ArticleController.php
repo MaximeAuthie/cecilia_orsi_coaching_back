@@ -147,7 +147,7 @@ class ArticleController extends AbstractController
 
     //! Récupérer les données d'un article grace à son id
     #[Route('/api/article/id/{id}', name: 'app_articles_one_api', methods: ['GET','OPTIONS'])]
-    public function getArticleById(int $id, Request $request , ArticleRepository $articleRepository, ApiAuthentification $apiAuthentification): Response {
+    public function getArticleById(int $id, Request $request , ArticleRepository $articleRepository): Response {
         try {
 
             // //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -521,7 +521,7 @@ class ArticleController extends AbstractController
 
     //! Ajouter un article dans la BDD
     #[Route('/api/article/add', name: 'app_article_add_api', methods: ['POST','OPTIONS'])]
-    public function addArticle(Request $request , UserRepository $userRepository,  CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
+    public function addArticle(Request $request , UserRepository $userRepository, ArticleRepository $articleRepository, CategoryRepository $categoryRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -588,7 +588,18 @@ class ArticleController extends AbstractController
             $keywordsList       = $data['kewords_list'];
             $categoriesList     = $data['categories_list'];
             
-            //? Vérifier si le user existe
+            //? Vérifier si l'article existe déjà
+            $article = $articleRepository->findOneBy(['title_article'=>$title]);
+            if ($article) {
+                return $this->json(
+                    ['message' => 'L\'article existe déjà dans la BDD.'],
+                    206,
+                    ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'POST'], 
+                    []
+                );
+            }
+
+            //? Vérifier si l'utilisateur existe
             $user = $userRepository->find($userId);
 
             if (!$user) {
@@ -599,8 +610,6 @@ class ArticleController extends AbstractController
                     []
                 );
             }
-
-            
 
             //? Instancier un nouvel article et setter ses propriétés
             $article = new Article();
@@ -619,8 +628,7 @@ class ArticleController extends AbstractController
                 $article->addCategoriesList($categorie);
             }
             
-
-            //? Persiter et flush des données pour les insérerb l'article en BDD
+            //? Persiter et flush des données pour les insérer l'article en BDD
             $entityManagerInterface->persist($article);
             $entityManagerInterface->flush();
 

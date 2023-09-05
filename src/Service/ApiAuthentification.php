@@ -8,7 +8,13 @@ namespace App\Service;
 
     class ApiAuthentification {
 
-        public function authentification(UserPasswordHasherInterface $passwordHasherInteface, UserRepository $userRepository, string $userEmail, string $userPassword) {
+        //! Vérifier si les données d'authentification de l'utilisateur sont valides
+        /**
+         * @param string  $userEmail
+         * @param string  $userPassword
+         * @return bool
+        */
+        public function authentification(UserPasswordHasherInterface $passwordHasherInteface, UserRepository $userRepository, string $userEmail, string $userPassword):bool {
             
             //? Nettoyer les données issues de l'api
             $userEmail = Utils::cleanInput($userEmail);
@@ -21,7 +27,7 @@ namespace App\Service;
             if ($user) {
 
                 //? Tester si le mot de passe est correct
-                if ($passwordHasherInteface->isPasswordValid($user, $userPassword)) { //! ici, on passe en argument un objet user et le mdp en clair
+                if ($passwordHasherInteface->isPasswordValid($user, $userPassword)) {
                     return true;
                 } else {
                     return false;
@@ -31,7 +37,14 @@ namespace App\Service;
             }
         }
 
-        public function genNewToken(string $email, string $secretkey, UserRepository $userRepository, string $duration) {
+        //! Générer un nouveau token
+        /**
+         * @param string  $email
+         * @param string  $secretkey
+         * @param string  $duration
+         * @return bool
+        */
+        public function genNewToken(string $email, string $secretkey, UserRepository $userRepository, string $duration):string {
 
             //? autolaod composer
             require_once('../vendor/autoload.php'); 
@@ -40,7 +53,7 @@ namespace App\Service;
             $user       = $userRepository->findOneBy(['email'=>$email]);
             $issuedAt   = new \DateTimeImmutable();                                         //Date de génération du token
             $expire     = $issuedAt->modify('+'.$duration.' minutes')->getTimestamp();      //Date d'expiration du token
-            $serverName = "https://www.maximeauthie.fr/";                                   //Domaine du site
+            $serverName = "your.domain.name";                                               //Domaine du site
             $username   = $user->getFirstNameUser().' '.$user->getLastNameUser();           //Récupérer le nom entier
             
             //? Définir le contenu du token
@@ -59,6 +72,12 @@ namespace App\Service;
                 return $token;
         }
 
+        //! Vérifier la validité d'un token
+        /**
+         * @param string  $token
+         * @param string  $key
+         * @return bool || string
+        */
         public function verifyToken(string $token, string $key) {
 
             //? autoload composer

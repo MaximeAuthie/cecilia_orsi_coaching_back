@@ -66,7 +66,7 @@ class PageController extends AbstractController {
         }
     }
 
-    //! Récupérer les données d'un page grace à son titre
+    //! Récupérer les données d'une page grace à son titre
     #[Route('/api/page/title/{title}', name: 'app_page_title_api', methods: ['GET','OPTIONS'])]
     public function getPageByTitle(string $title, Request $request , PageRepository $pageRepository): Response {
         try {

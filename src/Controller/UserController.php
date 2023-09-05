@@ -105,7 +105,7 @@ class UserController extends AbstractController {
                 $mailObject     = mb_convert_encoding('Cécilia Orsi Coaching : authentification à double facteur', 'ISO-8859-1', 'UTF-8');
                 $mailContent    = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
                                                       "<p>Bonjour ".$user->getFirstNameUser()." ! </p>".
-                                                      "<p>Tu as essayé de te connecter à l'espace administrateur de Cécilia Orsi Coaching à ".$hour.". Pour confirmer ton identité et accéder à ton espace administrateur, cliques sur le lien suivant : </br>".
+                                                      "<p>Vous avez essayé de te connecter à l'espace administrateur de Cécilia Orsi Coaching à ".$hour.". Pour confirmer votre identité et accéder à votre espace administrateur, cliquez sur le lien suivant : </br>".
                                                       '<a href = "https://127.0.0.1:8000/api/user/logIn/'.$user->getId().'/'.$token.'">Accéder à l\'espace administrateur</a>', 'ISO-8859-1', 'UTF-8');
                 
                 //? Executer la méthode sendMail() de la classe Messenging
@@ -158,7 +158,7 @@ class UserController extends AbstractController {
     
     //! Vérifier la double authentification et finaliser l'authentification
     #[ROUTE('api/user/logIn/{id}/{token}', name:"app_api_user_login_validation", methods: 'GET')]
-    public function logInValidation(string $id, string $token, Request $request, SerializerInterface $serializerInterface, UserRepository $userRepository, ApiAuthentification $apiAuthentification):Response {
+    public function logInValidation(string $id, string $token, UserRepository $userRepository, ApiAuthentification $apiAuthentification):Response {
          
         //? Nettoyer les données
         $id = Utils::cleanInput($id);
@@ -169,7 +169,7 @@ class UserController extends AbstractController {
  
         if (!$user) {
             return $this->json(
-                ['message' => 'This user does not exist in the database.'],
+                ['message' => 'L\'utilisateur n\'existe pas dans la BDD'],
                 400,
                 ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
                 []
@@ -196,7 +196,7 @@ class UserController extends AbstractController {
   
         //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
         $secretkey      = $this->getParameter('token');
-        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 1);
+        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 2);
 
         //? Rediriger l'utilisateur vers le front avec le token
         header("Location: http://localhost:3000/managerApp/logIn/".$token."!".$id);
@@ -205,7 +205,7 @@ class UserController extends AbstractController {
 
     //! Récupérer le rôle d'un utilisateur
     #[Route('/api/user/role', name: 'app_user_role_api', methods: ['PATCH','OPTIONS'])]
-    public function getUserRole(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, UserPasswordHasherInterface $userPasswordHasherInterface, ApiAuthentification $apiAuthentification): Response {
+    public function getUserRole(Request $request , UserRepository $userRepository,SerializerInterface $serializerInterface, ApiAuthentification $apiAuthentification): Response {
         try {
     
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -219,10 +219,10 @@ class UserController extends AbstractController {
             }
 
             //? Récupérer les données nécessaires à la vérification du token
-            $key = $this->getParameter('token');
+            $secretkey = $this->getParameter('token');
             $jwt = $request->server->get('HTTP_AUTHORIZATION');
             $jwt = str_replace('Bearer ', '', $jwt);
-
+            
             //? Vérifier si le token existe bien dans la requête
             if ($jwt == '') {
                 return $this->json(
@@ -234,8 +234,8 @@ class UserController extends AbstractController {
             }
  
             //? Executer la méthode verifyToken() du service ApiAthentification
-            $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
-
+            $verifyToken = $apiAuthentification->verifyToken($jwt,$secretkey);
+            
             if ($verifyToken !== true) {
                 return $this->json(
                     ['message' => "Token invalide"],

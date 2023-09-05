@@ -20,7 +20,7 @@ class CommentController extends AbstractController {
 
     //! Récupérer les données des commentaires déjà modérés
     #[Route('/api/comment/moderated', name: 'app_moderated_comments_api', methods: ['GET','OPTIONS'])]
-    public function getModeratedComments(Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
+    public function getModeratedComments(Request $request , CommentRepository $commentRepository): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -73,7 +73,7 @@ class CommentController extends AbstractController {
 
     //! Récupérer les données des commentaires déjà modérés et validés d'un article via son ID
     #[Route('/api/comment/validated/{id}', name: 'app_validated_comments_id_api', methods: ['GET','OPTIONS'])]
-    public function getValidatedCommentsById(int $id, Request $request , CommentRepository $commentRepository, EntityManagerInterface $entityManagerInterface): Response {
+    public function getValidatedCommentsByArticle(int $id, Request $request , CommentRepository $commentRepository): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -336,7 +336,7 @@ class CommentController extends AbstractController {
 
     //! Valider un article
     #[Route('/api/comment/validate', name: 'app_validate_comment_api', methods: ['PATCH','OPTIONS'])]
-    public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, ApiAuthentification $apiAuthentification): Response {
+    public function validateComment(Request $request , CommentRepository $commentRepository, UserRepository $userRepository ,SerializerInterface $serializerInterface, EntityManagerInterface $entityManagerInterface, Messaging $messaging, ApiAuthentification $apiAuthentification): Response {
         try {
 
             //? Répondre uniquement aux requêtes OPTIONS avec les en-têtes appropriés
@@ -420,6 +420,9 @@ class CommentController extends AbstractController {
                     []);
             }
 
+            //? Instancier un objet article
+            $article = $comment->getArticle();
+
             //? Modifier la valeur de la propriété isValidated_comment et de user
             $comment->setIsValidatedComment(true);
             $comment->setUser($user);
@@ -427,6 +430,36 @@ class CommentController extends AbstractController {
             //? Persiter et flush des données pour les insérer en BDD
             $entityManagerInterface->persist($comment);
             $entityManagerInterface->flush();
+            
+             //? Récupérer les variables d'authentification du webmail pour utiliser la méthode sendEmail() du service Messaging    
+             $mailLogin      = $this->getParameter('mailaccount');
+             $mailPassword   = $this->getParameter('mailpassword');
+ 
+             //? Définition des variables pour utiliser la méthode sendEmail() de la classe Messenging
+             $dateTimeComment    = $comment->getDateComment();
+             $hour               = $dateTimeComment->format('H:i:s');
+             $date               = $dateTimeComment->format('d-m-Y');
+             $recipientName      = mb_convert_encoding($comment->getAuthorNameComment(), 'ISO-8859-1', 'UTF-8');
+             $mailObject         = mb_convert_encoding('Validation de votre commentaire', 'ISO-8859-1', 'UTF-8');
+             $mailContent        = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
+                                                   "<p>Bonjour ".$comment->getAuthorNameComment()." ! </p>".
+                                                   "<p>Nous vous informons que le commentaire que vous avez laissé sur le site Cécilia Orsi Coaching le ".$date." à ".$hour.", concernant l'article '".$article->getTitleArticle()."' a été validé par notre équipe de modération.</br>".
+                                                   "Votre commentaire est donc désormais visible sur le site Cécilia Orsi Coaching. <br><br>".
+                                                   "Bien cordialement, <br><br>".
+                                                   "Cécilia Orsi Coaching", 'ISO-8859-1', 'UTF-8');
+             
+             //? Executer la méthode sendMail() de la classe Messenging
+             $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $comment->getAuthorEmailComment(), $mailObject, $mailContent, $recipientName, '');
+ 
+             //? Vérifier si l'envoi du mail à échoué
+             if ($mailStatus != 'The email has been sent') {
+                 return $this->json(
+                     ['message' => 'Impossible d\'envoyer le mail de confirmation. Merci de réessayer plus tard.'],
+                     500,
+                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
+                     []
+                 );
+             }
 
             //? Renvoyer un json pour avertir que l'enregistrement à bien été effectué
             return $this->json(
@@ -533,6 +566,9 @@ class CommentController extends AbstractController {
                     []);
             }
 
+            //? Instancier un objet article
+            $article = $comment->getArticle();
+
             //? Modifier la valeur de la propriété isValidated_comment et de user
             $comment->setIsValidatedComment(false);
             $comment->setUser($user);
@@ -550,12 +586,12 @@ class CommentController extends AbstractController {
             $hour               = $dateTimeComment->format('H:i:s');
             $date               = $dateTimeComment->format('d-m-Y');
             $recipientName      = mb_convert_encoding($comment->getAuthorNameComment(), 'ISO-8859-1', 'UTF-8');
-            $mailObject         = mb_convert_encoding('Cécilia Orsi Coaching : équipe de modération', 'ISO-8859-1', 'UTF-8');
+            $mailObject         = mb_convert_encoding('Rejet de votre commentaire', 'ISO-8859-1', 'UTF-8');
             $mailContent        = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
                                                   "<p>Bonjour ".$comment->getAuthorNameComment()." ! </p>".
-                                                  "<p>Nous t'informons que le commentaire que tu as laissé sur le site Cécilia Orsi Coaching le ".$date." à ".$hour." n'a pas été validé par notre équipe de modération car il ne respecte pas les règles éditées dans les mentions légales.</br>".
-                                                  "Ton commentaire n'apparaitra donc pas sur le site. <br><br>".
-                                                  "Merci de ta compréhension. <br><br>".
+                                                  "<p>Nous vous informons que le commentaire que vous avez laissé sur le site Cécilia Orsi Coaching le ".$date." à ".$hour.", concernant l'article '".$article->getTitleArticle()."' n'a pas été validé par notre équipe de modération car il ne respecte pas les règles éditées dans les mentions légales.</br>".
+                                                  "Votre commentaire n'apparaitra donc pas sur le site. <br><br>".
+                                                  "Merci de votre compréhension. <br><br>".
                                                   "Cécilia Orsi Coaching", 'ISO-8859-1', 'UTF-8');
             
             //? Executer la méthode sendMail() de la classe Messenging
