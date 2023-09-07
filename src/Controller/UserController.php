@@ -53,8 +53,6 @@ class UserController extends AbstractController {
             $password       = Utils::cleanInput($data['password']);
             $currentTime    = new \DateTimeImmutable();
 
-            //? Récupérer la clé de chiffrement
-            $secretkey = $this->getParameter('token');
 
             //? Vérifier si les données du json ne sont pas vides
             if (empty($email) OR empty($password)) {
@@ -161,8 +159,8 @@ class UserController extends AbstractController {
     public function logInValidation(string $id, string $token, UserRepository $userRepository, ApiAuthentification $apiAuthentification):Response {
          
         //? Nettoyer les données
-        $id = Utils::cleanInput($id);
-        $token = Utils::cleanInput($token);
+        $id     = Utils::cleanInput($id);
+        $token  = Utils::cleanInput($token);
  
         //? Vérifier si l'utilisateur existe
         $user = $userRepository->find($id);
@@ -332,7 +330,7 @@ class UserController extends AbstractController {
             //? Vérifier si le token existe bien dans la requête
             if ($jwt == '') {
                 return $this->json(
-                    ['message' => 'Le token n\'existe pas.'],
+                    ['message' => "expired-session"],
                     401, 
                     ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                     []
@@ -342,6 +340,8 @@ class UserController extends AbstractController {
             //? Executer la méthode verifyToken() du service ApiAthentification
             $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
             
+
+            //? Vérifier si la singature du JWT est valide
             if ($verifyToken !== true && $verifyToken !== "Expired token") {
                 return $this->json(
                     ['message' => "expired-session"],
@@ -358,7 +358,7 @@ class UserController extends AbstractController {
                 //?On vérifie si le json n'est pas vide
                 if (!$json) {
                     return $this->json(
-                        ['message' => 'Le json est vide ou n\'existe pas.'],
+                        ['message' => "expired-session"],
                         400,
                         ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'PATCH'], 
                         []
