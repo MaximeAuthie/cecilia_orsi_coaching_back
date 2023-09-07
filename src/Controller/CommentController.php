@@ -393,8 +393,8 @@ class CommentController extends AbstractController {
             $data = $serializerInterface->decode($json, 'json');
 
             //? On nettoie les donnée issues du json
-            $commentId     = Utils::cleanInput($data['commentId']);
-            $userId       = Utils::cleanInput($data['userId']);
+            $commentId      = Utils::cleanInput($data['commentId']);
+            $userId         = Utils::cleanInput($data['userId']);
 
             //? Instancier un objet Comment
             $comment = $commentRepository->find($commentId);
@@ -450,7 +450,7 @@ class CommentController extends AbstractController {
              
              //? Executer la méthode sendMail() de la classe Messenging
              $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $comment->getAuthorEmailComment(), $mailObject, $mailContent, $recipientName, '');
- 
+            dd($mailStatus);
              //? Vérifier si l'envoi du mail à échoué
              if ($mailStatus != 'The email has been sent') {
                  return $this->json(
