@@ -35,11 +35,11 @@ class CommentController extends AbstractController {
             }
 
             //? Rechercher les commentaires dans la base de données
-            
-            $comments = $commentRepository->createQueryBuilder('c')
-            ->where('c.user IS NOT NULL')
-            ->getQuery()
-            ->getResult();
+            $comments = $commentRepository->findAllModeratedComments();
+            // $comments = $commentRepository->createQueryBuilder('c')
+            // ->where('c.user IS NOT NULL')
+            // ->getQuery()
+            // ->getResult();
 
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
@@ -87,13 +87,9 @@ class CommentController extends AbstractController {
                 ]);
             }
 
-            //? Rechercher les commentaires dans la base de données
-            
-            $comments = $commentRepository->createQueryBuilder('c')
-            ->where('c.user IS NOT NULL AND c.isValidated_comment=1 AND c.article=:id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getResult();
+            //? Rechercher les commentaires de l'article dans la base de données
+            $comments = $commentRepository->findValidatedByArticle($id);
+
 
             //? Si aucun commentaire n'est présent dans la BDD
             if (!isset($comments)) {
@@ -223,7 +219,7 @@ class CommentController extends AbstractController {
                                                     '<p>Un nouveau commentaire <strong>'.$authorName.'</strong>, envoyé le <strong>'.$date.' à '.$hour.'</strong>, a été posté pour l\'article <strong>'.$article->getTitleArticle().'</strong></br>'.
                                                     '<hr><p><strong><u>Contenu du message :</u></strong> </p><hr>'.
                                                     $content.'<hr><br>'.
-                                                    '<a href="http://localhost:3000/manager-interface">Rendez-vous dans votre espace administrateur pour le valider.</a>'
+                                                    '<a href="http://localhost:3000/managerApp">Rendez-vous dans votre espace administrateur pour le valider.</a>'
                                                     , 'ISO-8859-1', 'UTF-8');
 
             //? Executer la méthode sendMail() du service Messenging
@@ -450,7 +446,7 @@ class CommentController extends AbstractController {
              
              //? Executer la méthode sendMail() de la classe Messenging
              $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $comment->getAuthorEmailComment(), $mailObject, $mailContent, $recipientName, '');
-            dd($mailStatus);
+
              //? Vérifier si l'envoi du mail à échoué
              if ($mailStatus != 'The email has been sent') {
                  return $this->json(

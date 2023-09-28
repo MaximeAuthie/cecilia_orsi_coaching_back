@@ -64,13 +64,7 @@ class VisitController extends AbstractController {
             $currentTime = new \DateTimeImmutable();
             $filterHour = clone $currentTime;
             $filterHour = $filterHour->modify('-30 minutes');
-
-            $visits = $visitRepository->createQueryBuilder('v')
-                ->where('v.time_visit > :filterHour AND v.ip_visit= :ip')
-                ->setParameter('ip', $ip)
-                ->setParameter('filterHour', $filterHour)
-                ->getQuery()
-                ->getResult();
+            $visits = $visitRepository->findByIpAndDate($ip,$filterHour);
 
             //? Si une visite de moins de 30 minutes pour cette adresse ip existe déjà
             if ($visits) {
@@ -82,7 +76,6 @@ class VisitController extends AbstractController {
                 );
             }
             
-
             // ?Instancier un objet visit
             $visit = new Visit();
             $visit->setTimeVisit(new \DateTimeImmutable());
@@ -163,25 +156,13 @@ class VisitController extends AbstractController {
             $currentTime = new \DateTimeImmutable();
             $filterDateMonth = clone $currentTime;
             $filterDateMonth = $filterDateMonth->modify('-30 days');
-            
-            $monthVisits = $visitRepository->createQueryBuilder('v')
-                ->where('v.time_visit > :filterDate')
-                ->setParameter('filterDate', $filterDateMonth)
-                ->getQuery()
-                ->getResult();
-
+            $monthVisits = $visitRepository->findByStartDate($filterDateMonth);
             $monthVisits = count($monthVisits);
 
             //? Récupérer toutes les visites des 24 dernières heures et calculer leur nombre
             $filterDateDay = clone $currentTime;
             $filterDateDay = $filterDateDay->modify('-24 hours');
-
-            $dayVisits = $visitRepository->createQueryBuilder('v')
-                ->where('v.time_visit > :filterDate')
-                ->setParameter('filterDate', $filterDateDay)
-                ->getQuery()
-                ->getResult();
-
+            $dayVisits = $visitRepository->findByStartDate($filterDateDay);
             $dayVisits = count($dayVisits);
 
             //? Déclarer l'objet qui va être retourné au front 
