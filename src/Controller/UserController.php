@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -103,11 +104,11 @@ class UserController extends AbstractController {
                 $mailObject     = mb_convert_encoding('Cécilia Orsi Coaching : authentification à double facteur', 'ISO-8859-1', 'UTF-8');
                 $mailContent    = mb_convert_encoding("<img src='https://i.postimg.cc/mrR6JHNW/LOGO4.png'/>".
                                                       "<p>Bonjour ".$user->getFirstNameUser()." ! </p>".
-                                                      "<p>Vous avez essayé de te connecter à l'espace administrateur de Cécilia Orsi Coaching à ".$hour.". Pour confirmer votre identité et accéder à votre espace administrateur, cliquez sur le lien suivant : </br>".
+                                                      "<p>Vous avez essayé de vous connecter à l'espace administrateur de Cécilia Orsi Coaching à ".$hour.". Pour confirmer votre identité et accéder à votre espace administrateur, cliquez sur le lien suivant : </br>".
                                                       '<a href = "https://127.0.0.1:8000/api/user/logIn/'.$user->getId().'/'.$token.'">Accéder à l\'espace administrateur</a>', 'ISO-8859-1', 'UTF-8');
                 
                 //? Executer la méthode sendMail() de la classe Messenging
-                $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $user->getEmail(), $mailObject, $mailContent, $user->getFirstNameUser(), $user->getLastNameUser());
+                $mailStatus = $messaging->sendEmail($mailLogin, $mailPassword, $user->getEmail(), $mailObject, $mailContent,  mb_convert_encoding($user->getFirstNameUser(), 'ISO-8859-1', 'UTF-8'), mb_convert_encoding($user->getLastNameUser(), 'ISO-8859-1', 'UTF-8'));
                 
                 //? Vérifier si l'envoi du mail à échoué
                 if ($mailStatus != 'The email has been sent') {
@@ -133,6 +134,8 @@ class UserController extends AbstractController {
                 );
                 
             } else {
+
+                //? Si l'authentification est refusée, retourner un json d'erreur
                 return $this->json(
                     ['message' => 'Connexion refusée : l\'identifiant et/ou le mot de passe n\'est pas correct'],
                     401,
@@ -156,49 +159,48 @@ class UserController extends AbstractController {
     
     //! Vérifier la double authentification et finaliser l'authentification
     #[ROUTE('api/user/logIn/{id}/{token}', name:"app_api_user_login_validation", methods: 'GET')]
-    public function logInValidation(string $id, string $token, UserRepository $userRepository, ApiAuthentification $apiAuthentification):Response {
+    public function logInValidation(string $id, string $token, UserRepository $userRepository, ApiAuthentification $apiAuthentification) {
          
-        //? Nettoyer les données
-        $id     = Utils::cleanInput($id);
-        $token  = Utils::cleanInput($token);
- 
-        //? Vérifier si l'utilisateur existe
-        $user = $userRepository->find($id);
- 
-        if (!$user) {
-            return $this->json(
-                ['message' => 'L\'utilisateur n\'existe pas dans la BDD'],
-                400,
-                ['Content-Type'=>'application/json','Access-Control-Allow-Origin' =>'*', 'Access-Control-Allow-Method' => 'GET'], 
-                []
-            );
-        }
- 
-        //? Récupérer la secret key pour vérifier la validité du token avec la méthode verifyToken() du service ApiAuthentification
-        $secretkey = $this->getParameter('token');
- 
-        //? Appeller la méthode verifyToken() de ApiAuthentification
-        $checkToken = $apiAuthentification->verifyToken($token, $secretkey);
+        try {
+            //? Nettoyer les données
+            $id     = Utils::cleanInput($id);
+            $token  = Utils::cleanInput($token);
+    
+            //? Vérifier si l'utilisateur existe
+            $user = $userRepository->find($id);
+    
+            if (!$user) {
+                //? Rediriger l'utilisateur vers le front avec le token pour affichage d'un message d'erreur
+                return new RedirectResponse('https://www.cecilia-orsi-coaching.com/managerApp/logIn/invalid-token');
+            }
+    
+            //? Récupérer la secret key pour vérifier la validité du token avec la méthode verifyToken() du service ApiAuthentification
+            $secretkey = $this->getParameter('token');
+    
+            //? Appeller la méthode verifyToken() de ApiAuthentification
+            $checkToken = $apiAuthentification->verifyToken($token, $secretkey);
 
-        //? Vérifier si les token est valide 
-        if ($checkToken === "Signature verification failed") {
-            header("Location: http://localhost:3000/managerApp/logIn/invalid-token");
-            die();
-        }
- 
-        //? Vérifier si le token est expiré
-        if ($checkToken === "Expired token") {
-            header("Location: http://localhost:3000/managerApp/logIn/expired-token");
-            die();
-        }
-  
-        //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
-        $secretkey      = $this->getParameter('token');
-        $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 2);
+            //? Vérifier si le token est expiré
+            if ($checkToken === "Expired token") {
+                return new RedirectResponse('http://localhost:3000/managerApp/logIn/expired-token');
+            }
 
-        //? Rediriger l'utilisateur vers le front avec le token
-        header("Location: http://localhost:3000/managerApp/logIn/".$token."!".$id);
-        die();
+            //? Vérifier si les token est valide 
+            if ($checkToken !== true) {
+                return new RedirectResponse('http://localhost:3000/managerApp/logIn/invalid-token');
+            }
+    
+            //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
+            $secretkey      = $this->getParameter('token');
+            $token          = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 2);
+
+            //? Rediriger l'utilisateur vers le front avec le token
+            return new RedirectResponse("http://localhost:3000/managerApp/logIn/".$token."!".$id);
+            
+        } catch(\Exception $error) {
+            //? Rediriger l'utilisateur vers le front avec le token pour affichage d'un message d'erreur
+            return new RedirectResponse("http://localhost:3000/managerApp/logIn/invalid-token");
+        }
     }
 
     //! Récupérer le rôle d'un utilisateur
@@ -341,7 +343,7 @@ class UserController extends AbstractController {
             $verifyToken = $apiAuthentification->verifyToken($jwt,$key);
             
 
-            //? Vérifier si la singature du JWT est valide
+            //? Vérifier si la signature du JWT est valide
             if ($verifyToken !== true && $verifyToken !== "Expired token") {
                 return $this->json(
                     ['message' => "expired-session"],
@@ -391,7 +393,6 @@ class UserController extends AbstractController {
                 $expirationTime = clone $lastAuthTime;
                 $expirationTime->modify('+60 minutes');
                 
-                
                 if ($lastAuthTime > $currentTime) {
                     return $this->json(
                         ['message'=> 'expired-session'],
@@ -400,6 +401,7 @@ class UserController extends AbstractController {
                         []
                     );
                 }
+
                 //? Vérifier si l'heure de renouvellement (deniere authentification + 60 min) n'est pas dépassée
                 if ($currentTime > $expirationTime ) {
                     return $this->json(
@@ -409,7 +411,7 @@ class UserController extends AbstractController {
                         []
                     );
                 }
-      
+                
                 //? Verifier si la date de dernière authentification n'est pas antérieure à la date de dernière modification
                 if ($lastUpdateTime > $lastAuthTime ) {
                     return $this->json(
@@ -419,15 +421,15 @@ class UserController extends AbstractController {
                         []
                     );
                 }
-                
-                //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
-                $secretkey      = $this->getParameter('token');
-                $newToken       = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 5);
-                
+
                 //? Mettre à jour la date de dernière authentification dans la BDD
                 $user->setLastAuthUser($currentTime);
                 $entityManagerInterface->persist($user);
                 $entityManagerInterface->flush();
+                
+                //? Récupérer la clé secrète pour générer un token avec la méthode genNewToken() du service ApiAuthentification
+                $secretkey      = $this->getParameter('token');
+                $newToken       = $apiAuthentification->genNewToken($user->getEmail(), $secretkey, $userRepository, 2);
                 
                 //? Renvoyer un nouveau token
                 return $this->json(
