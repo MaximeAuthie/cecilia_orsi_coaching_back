@@ -3,6 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Visit;
+use DateTime;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -45,4 +47,33 @@ class VisitRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+
+    /**
+     * @param DateTimeImmutable $startDate
+     * @return Visit[] Returns an array of Visit objects
+    **/
+
+    public function findByStartDate(DateTimeImmutable $startDate): array
+    {
+        return $this->createQueryBuilder('v')
+        ->where('v.time_visit > :filterDate')
+        ->setParameter('filterDate', $startDate)
+        ->getQuery()
+        ->getResult();
+    }
+
+    /**
+     * @param DateTimeImmutable $startDate
+     * @return Visit[] Returns an array of Visit objects
+    **/
+
+    public function findByIpAndDate(string $publicIp, DateTimeImmutable $startDate): array
+    {
+        return $this->createQueryBuilder('v')
+        ->where('v.time_visit > :filterHour AND v.ip_visit= :ip')
+        ->setParameter('ip', $publicIp)
+        ->setParameter('filterHour', $startDate)
+        ->getQuery()
+        ->getResult();
+    }
 }
